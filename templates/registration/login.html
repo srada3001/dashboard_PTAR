@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Entrar{% endblock %}
+{% block content %}
+<section class="tarjeta tarjeta--angosta">
+  <h2>Entrar</h2>
+  <form method="post" class="formulario">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="error">Usuario o contraseña incorrectos.</div>
+    {% endif %}
+    <div class="campo">
+      <label for="id_username">Usuario</label>
+      <input type="text" name="username" id="id_username" autocomplete="username" autofocus required
+             value="{{ form.username.value|default:'' }}">
+    </div>
+    <div class="campo">
+      <label for="id_password">Contraseña</label>
+      <input type="password" name="password" id="id_password" autocomplete="current-password" required>
+    </div>
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit" class="boton">Entrar</button>
+  </form>
+  <p class="ayuda">¿Olvidaste tu contraseña? Pídele al administrador una contraseña temporal.</p>
+</section>
+{% endblock %}

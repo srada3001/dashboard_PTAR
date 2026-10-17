@@ -1,0 +1,10 @@
+# Files uploaded to Cloud Build by `gcloud builds submit` (scripts/gcp/deploy.sh).
+.gcloudignore
+.git
+.gitignore
+#!include:.gitignore
+.venv/
+.claude/
+.devcontainer/
+docs/
+tests/

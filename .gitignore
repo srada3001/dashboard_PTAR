@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Django
+db.sqlite3
+db.sqlite3-*
+staticfiles/
+media/
+
+# Secrets
+.env
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Plant data (real measurements): kept outside the repo, never committed.
+# The reference spreadsheets live in C:\Users\srada\Desktop\referencia_ptar\.
+*.xlsx
+*.xlsm
+*.xls
+*.csv
+!**/import_maps/*.csv
+~$*
+exports/
+
+# Local Claude Code settings
+.claude/settings.local.json

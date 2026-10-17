@@ -1,0 +1,288 @@
+/* ============================================================
+   Dashboard PTAR — estilos
+   Mismos tokens que la portada de RefinIA y sus herramientas
+   (refinia-portal/static/css/styles.css).
+   ============================================================ */
+
+:root {
+  /* Tema claro unico: tambien para los controles que pinta el navegador. */
+  color-scheme: light;
+
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --surface-2: #f6f8fa;
+  --border: #d9dee5;
+  --text: #17202a;
+  --text-soft: #5a6874;
+  --text-faint: #8b97a3;
+
+  --brand: #2f4f4f;
+  --brand-strong: #21393a;
+  --accent: #7ba428;
+  --accent-soft: #eaf3d8;
+  --accent-ink: #4f6b1a;
+  --gold: #b8860b;
+  --error: #b3261e;
+  --error-soft: #fbeaea;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(23, 32, 42, .06), 0 8px 24px rgba(23, 32, 42, .07);
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-cond: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--brand); }
+
+h2, h3 { font-family: var(--font-cond); font-weight: 700; letter-spacing: .01em; margin: 0 0 8px; }
+h2 { font-size: 22px; }
+h3 { font-size: 18px; }
+
+/* ============================================================
+   Barra superior — común a todas las herramientas
+   ------------------------------------------------------------
+   Copiada de refinia-portal/static/css/styles.css. La portada,
+   el optimizador de Balance, los gemelos digitales y el
+   dashboard U044 llevan esta misma barra. Si se cambia allá,
+   se cambia también aquí.
+   ============================================================ */
+
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 22px;
+  padding: 12px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Vuelta al índice. En la propia portada es un <span>, no un enlace. */
+.barra__inicio {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  font-family: var(--font-cond);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: .02em;
+  color: var(--brand);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background .15s, border-color .15s;
+}
+
+a.barra__inicio:hover { background: var(--accent-soft); border-color: var(--accent); }
+a.barra__inicio:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.barra__inicio span[aria-hidden] { font-size: 15px; color: var(--text-faint); }
+a.barra__inicio:hover span[aria-hidden] { color: var(--accent-ink); }
+
+/* La portada no vuelve a ninguna parte: mismo sitio, sin borde ni flecha. */
+span.barra__inicio { border-color: transparent; padding-left: 12px; }
+
+.barra__app { display: flex; align-items: center; gap: 12px; flex: 1 1 320px; min-width: 0; }
+
+.barra__app h1 {
+  font-family: var(--font-cond);
+  font-weight: 700;
+  font-size: 23px;
+  line-height: 1.15;
+  letter-spacing: .01em;
+  color: var(--text);
+  margin: 0;
+  text-wrap: balance;
+}
+
+.barra__app p { margin: 2px 0 0; font-size: 13px; color: var(--text-soft); }
+
+.barra__logos { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+.barra__logo { height: 32px; width: auto; }
+
+/* El de Ecopetrol va siempre el ultimo y es el unico comun a todas las
+   herramientas; los que lleva a su izquierda son propios de cada una. El hueco
+   extra marca esa diferencia sin necesidad de una linea divisoria. */
+.barra__logo--ecopetrol:not(:only-child) { margin-left: 8px; }
+
+@media (max-width: 720px) {
+  .barra { padding: 10px 16px; gap: 10px 14px; }
+  .barra__app h1 { font-size: 20px; }
+  .barra__app p { display: none; }
+  .barra__logos { gap: 10px; }
+  .barra__logo { height: 26px; }
+}
+
+/* ---------------- Menú de la app ---------------- */
+
+.menu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 0 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.menu__secciones { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.menu__secciones a {
+  display: inline-block;
+  padding: 11px 12px 9px;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-soft);
+  text-decoration: none;
+}
+
+.menu__secciones a:hover { color: var(--brand); }
+.menu__secciones a[aria-current="page"] { color: var(--brand); border-bottom-color: var(--accent); }
+
+.menu__cuenta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 13px; padding: 8px 0; }
+.menu__cuenta form { margin: 0; }
+.menu__persona { color: var(--text-soft); }
+
+.enlace {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .menu { padding: 0 16px; }
+}
+
+/* ---------------- Contenido ---------------- */
+
+.contenido { max-width: 1100px; margin: 0 auto; padding: 28px 20px 72px; }
+
+@media (max-width: 720px) {
+  .contenido { padding: 20px 16px 48px; }
+}
+
+.encabezado { margin-bottom: 18px; }
+.encabezado h2 { margin-bottom: 2px; }
+
+.tarjeta {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px 24px;
+}
+
+.tarjeta--angosta { max-width: 420px; margin: 24px auto; }
+
+.vacio p { margin: 0 0 4px; }
+
+.ayuda { color: var(--text-soft); font-size: 13px; margin: 0; }
+
+.aviso {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.error { color: var(--error); font-size: 14px; margin: 4px 0; }
+
+/* ---------------- Mensajes ---------------- */
+
+.mensajes { list-style: none; margin: 0 0 18px; padding: 0; }
+
+.mensaje {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.mensaje--error { background: var(--error-soft); color: var(--error); }
+
+/* ---------------- Formularios ---------------- */
+
+.formulario { display: grid; gap: 14px; margin: 12px 0; }
+
+.campo { display: grid; gap: 4px; }
+.campo label { font-weight: 500; font-size: 14px; }
+
+.campo input[type="text"],
+.campo input[type="password"],
+.campo input[type="number"],
+.campo select {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.campo input:focus-visible, .campo select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.campo--error input { border-color: var(--error); }
+.campo ul { margin: 4px 0 0; padding-left: 18px; color: var(--text-soft); font-size: 13px; }
+
+.boton {
+  justify-self: start;
+  padding: 9px 18px;
+  border: 1px solid var(--brand);
+  border-radius: var(--radius-sm);
+  background: var(--brand);
+  color: #fff;
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: .03em;
+  cursor: pointer;
+}
+
+.boton:hover { background: var(--brand-strong); border-color: var(--brand-strong); }
+.boton:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ---------------- Captura ---------------- */
+
+.formatos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.formato { padding: 18px 20px; }
+
+.formato__fuente {
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+
+.formato__nombre { margin: 2px 0 4px; }
+.formato__detalle { margin: 0; color: var(--text-soft); font-size: 14px; }

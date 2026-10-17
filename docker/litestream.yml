@@ -1,0 +1,13 @@
+# Litestream: continuous replication of the SQLite database to Cloud Storage.
+# Environment variables are expanded when the file is loaded.
+dbs:
+  - path: ${DATABASE_PATH}
+    replicas:
+      - type: gcs
+        bucket: ${LITESTREAM_BUCKET}
+        path: db
+        sync-interval: 1s
+        # Daily snapshots, kept 3 days: the database can be restored to any moment in that window.
+        # The retention is still to be decided (docs/REQUISITOS.md §15); 3 days is Avante's value.
+        snapshot-interval: 24h
+        retention: 72h

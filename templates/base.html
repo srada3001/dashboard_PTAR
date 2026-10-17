@@ -1,0 +1,61 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dashboard PTAR{% endblock %} — RefinIA</title>
+  {% include "partials/icons.html" %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'js/htmx.min.js' %}" defer></script>
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <header class="barra">
+    <a class="barra__inicio" href="https://refinia.web.app/"><span aria-hidden="true">←</span>RefinIA</a>
+    <div class="barra__app">
+      <div>
+        <h1>Dashboard PTAR</h1>
+        <p>Planta de tratamiento de aguas residuales · calidad y operación</p>
+      </div>
+    </div>
+    <div class="barra__logos">
+      <img src="{% static 'img/Ecopetrol.png' %}" alt="Ecopetrol" class="barra__logo barra__logo--ecopetrol">
+    </div>
+  </header>
+
+  {% if user.is_authenticated and not user.must_change_password %}
+    {% url 'important_variables' as important_url %}{% url 'explorer' as explorer_url %}{% url 'capture_index' as capture_url %}
+    <nav class="menu" aria-label="Secciones">
+      <div class="menu__secciones">
+        {% if user.can_read %}
+          <a href="{{ important_url }}"{% if request.path == important_url %} aria-current="page"{% endif %}>Variables importantes</a>
+          <a href="{{ explorer_url }}"{% if request.path == explorer_url %} aria-current="page"{% endif %}>Explorador</a>
+        {% endif %}
+        {% if user.can_capture %}
+          <a href="{{ capture_url }}"{% if request.path == capture_url %} aria-current="page"{% endif %}>Captura</a>
+        {% endif %}
+        {% if user.is_admin %}<a href="{% url 'admin:index' %}">Administración</a>{% endif %}
+      </div>
+      <div class="menu__cuenta">
+        <span class="menu__persona">{{ user.display_name }} · {{ user.get_role_display }}</span>
+        <a href="{% url 'password_change' %}">Contraseña</a>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="enlace">Cerrar sesión</button>
+        </form>
+      </div>
+    </nav>
+  {% endif %}
+
+  <main class="contenido">
+    {% if messages %}
+      <ul class="mensajes">
+        {% for message in messages %}<li class="mensaje mensaje--{{ message.tags }}">{{ message }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,27 @@
+[project]
+name = "dashboard-ptar"
+version = "0.1.0"
+description = "Datos de calidad y operación de la PTAR: captura validada, histórico y tendencias."
+requires-python = ">=3.14"
+dependencies = [
+    "argon2-cffi>=25.1.0",
+    "django>=6.0",
+    "django-axes>=8.3.1",
+    "django-environ>=0.14.0",
+    "gunicorn>=26.2.0",
+    "whitenoise>=6.12.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-django>=4.14.0",
+]

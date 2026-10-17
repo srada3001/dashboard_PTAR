@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Sin acceso{% endblock %}
+{% block content %}
+<section class="tarjeta tarjeta--angosta">
+  <h2>Sin acceso</h2>
+  <p>Tu usuario no tiene permiso para ver esta página.</p>
+  <p><a href="{% url 'home' %}">Ir a tu página de inicio</a></p>
+</section>
+{% endblock %}

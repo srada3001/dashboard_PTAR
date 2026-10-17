@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Captura{% endblock %}
+{% block content %}
+<header class="encabezado">
+  <h2>Captura</h2>
+  <p class="ayuda">Los formatos que puedes llenar. La captura de datos se habilita en la fase 3.</p>
+</header>
+
+{% if capture_forms %}
+  <ul class="formatos">
+    {% for capture_form in capture_forms %}
+      <li class="tarjeta formato">
+        <span class="formato__fuente">{{ capture_form.source.code }}</span>
+        <h3 class="formato__nombre">{{ capture_form.name }}</h3>
+        <p class="formato__detalle">
+          {{ capture_form.get_schedule_display }} ·
+          {% with total=capture_form.items.all|length %}{{ total }} variable{{ total|pluralize:"s" }}{% endwith %}
+        </p>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <section class="tarjeta vacio">
+    <p>Todavía no tienes formatos de captura asignados.</p>
+    <p class="ayuda">Pídele al administrador que te asigne los formatos que vas a llenar.</p>
+  </section>
+{% endif %}
+{% endblock %}

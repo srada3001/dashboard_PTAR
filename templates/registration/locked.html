@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Cuenta bloqueada{% endblock %}
+{% block content %}
+<section class="tarjeta tarjeta--angosta">
+  <h2>Cuenta bloqueada</h2>
+  <p>Hubo {{ failure_limit }} intentos fallidos seguidos para el usuario <strong>{{ username }}</strong>.</p>
+  <p>La cuenta queda bloqueada durante 10 minutos. Después podrás intentarlo de nuevo, o pedirle al administrador que la desbloquee antes.</p>
+  <p><a href="{% url 'login' %}">Volver a la página de entrada</a></p>
+</section>
+{% endblock %}
