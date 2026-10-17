@@ -16,8 +16,8 @@ RUN_SA_NAME=dashboard-ptar-run            # Own service account, so other apps i
 IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/web"
 RUN_SA="$RUN_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com"
 
-# The app answers on its run.app address and, through Firebase Hosting, on refinia-ptar.web.app
-# (docs/REQUISITOS.md §11; which one people use is still pending, §15). Firebase forwards the
+# The app answers on its run.app address and, through Firebase Hosting, on refinia-ptar.web.app,
+# the address people use (docs/REQUISITOS.md §11 and §15). Firebase forwards the
 # request with the run.app Host, so only the browser's Origin needs trusting for CSRF.
 APP_ENV="ALLOWED_HOSTS=.run.app,LITESTREAM_BUCKET=$BUCKET,CSRF_TRUSTED_ORIGINS=https://refinia-ptar.web.app"
 APP_SECRETS="SECRET_KEY=$SECRET_KEY_SECRET:latest"

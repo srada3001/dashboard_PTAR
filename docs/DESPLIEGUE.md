@@ -78,14 +78,15 @@ Pide el usuario (nombre corto) y el nombre completo, reinicia la app con ese ped
 - Si ya existe un administrador, el script no crea otro.
 - Las demás personas las creas desde **Administración** dentro de la app, cada una con su rol y sus formatos de captura.
 
-## 5. Entrada desde RefinIA (pendiente)
+## 5. Entrada desde RefinIA
 
-La dirección que usará la gente está pendiente (REQUISITOS.md §15): `run.app` directo, como Avante, o `refinia-ptar.web.app`, como las otras herramientas. La app ya está preparada para las dos:
-- la sesión usa la cookie `__session`, la única que Firebase Hosting deja pasar a Cloud Run;
-- todas las respuestas llevan `Cache-Control: private`, para que la CDN de Firebase no guarde páginas de nadie;
-- `https://refinia-ptar.web.app` ya está en `CSRF_TRUSTED_ORIGINS` (`scripts/gcp/config.sh`).
+La gente entra por **https://refinia-ptar.web.app** (REQUISITOS.md §15), como a las otras herramientas, o desde su tarjeta en la portada de RefinIA. La dirección de `run.app` sigue funcionando.
 
-Para entrar por Firebase hay que crear el sitio `refinia-ptar`, agregar su bloque en `firebase.json` y su tarjeta en `static/index.html` del repositorio `refinia-portal`. El README de ese repositorio explica cómo.
+- El sitio `refinia-ptar` de Firebase Hosting pasa todas las peticiones al servicio `dashboard-ptar`. Su bloque está en `firebase.json` del repositorio `refinia-portal`, y se publica con cada push a `main` de ese repositorio.
+- La sesión usa la cookie `__session`, la única que Firebase Hosting deja pasar a Cloud Run.
+- Todas las respuestas llevan `Cache-Control: private`, para que la CDN de Firebase no guarde páginas de nadie.
+- `https://refinia-ptar.web.app` está en `CSRF_TRUSTED_ORIGINS` (`scripts/gcp/config.sh`). Si se le conecta un dominio propio, hay que agregarlo ahí y volver a desplegar.
+- Firebase corta las peticiones de más de 60 segundos. Si alguna tarda más, se entra por la dirección de `run.app`.
 
 ## 6. Actualizaciones
 

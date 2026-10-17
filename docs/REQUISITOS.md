@@ -1,7 +1,7 @@
 # Dashboard PTAR — Requisitos y lineamientos
 
 > Documento vivo. Cuando una decisión cambie, se actualiza aquí primero.
-> Última actualización: 2026-10-15. Hay decisiones abiertas (§15); lo que dependa de ellas está marcado como **pendiente**.
+> Última actualización: 2026-10-17. Hay decisiones abiertas (§15); lo que dependa de ellas está marcado como **pendiente**.
 
 ## 1. Contexto y objetivo
 
@@ -281,11 +281,10 @@ El mismo de Avante, para mantener una sola forma de trabajar:
   - **Una sola instancia** con **CPU siempre asignada**, porque la base vive dentro del contenedor. Por la misma razón, las migraciones y el primer administrador se ejecutan al arrancar el contenedor.
   - Cloud Build y Artifact Registry construyen y guardan la imagen; Secret Manager guarda `SECRET_KEY`.
   - Scripts en `scripts/gcp/` y guía en `docs/DESPLIEGUE.md`.
-- **Acceso desde RefinIA:** una tarjeta en `refinia-portal` y un sitio de Firebase Hosting (`refinia-ptar`) que reenvía a Cloud Run, como las otras herramientas. **Ojo:**
+- **Dirección:** https://refinia-ptar.web.app, con su tarjeta en `refinia-portal`. Es un sitio de Firebase Hosting (`refinia-ptar`) que reenvía a Cloud Run, como las otras herramientas; la dirección de `run.app` sigue funcionando. **Ojo:**
   - Firebase Hosting solo deja pasar a Cloud Run la cookie llamada `__session`. Las otras herramientas usan la contraseña de nginx, que no depende de cookies; esta app usa login con sesión.
   - Por eso, detrás de Firebase hay que usar `SESSION_COOKIE_NAME = "__session"` y `CSRF_USE_SESSIONS = True`, y responder con `Cache-Control: private`.
   - Firebase además corta las peticiones de más de 60 segundos, así que las exportaciones grandes se preparan en segundo plano.
-  - La alternativa es entrar directo por `run.app`, como Avante (pendiente, §15).
 - **Zona horaria** `America/Bogota`; interfaz en español (`LANGUAGE_CODE = "es"`).
 - **Configuración** por variables de entorno. Ningún secreto en el repositorio.
 
@@ -344,6 +343,9 @@ Cada fase se entrega funcionando y con pruebas. Prioridad de las pruebas:
 - **«Hoja4»** y sus rangos son un ejemplo antiguo: no se toman como referencia.
 - **Repositorio:** https://github.com/srada3001/dashboard_PTAR. Los archivos de referencia no van al repositorio.
 
+### Decidido el 2026-10-17
+- **Dirección:** https://refinia-ptar.web.app, por Firebase Hosting, como las otras herramientas de RefinIA (§11). La de `run.app` sigue funcionando.
+
 ### Pendientes
 1. **Tableristas:** ¿tienen lectura o son capturistas sin lectura?
 2. **Capturista:** ¿ve lo ya registrado en su formato para esa fecha y hora, para no duplicar ni pisar datos? ¿Puede corregir sus propias capturas recientes? Propuesta: sí a ambas, solo dentro de su ámbito y solo las de las últimas 24 horas.
@@ -359,9 +361,8 @@ Cada fase se entrega funcionando y con pruebas. Prioridad de las pruebas:
 7. **Fuente** de los datos de separadores y agua agria, sodas, DIAPAC y Ecodiesel.
 8. **Columnas casi vacías desde 2023** en «Datos LABORATORIO» (aguas agrias T-2590 y otras, teas, ácido, piscina pulmón): se importan, pero ¿se siguen capturando?
 9. **Respaldo:** frecuencia de la exportación automática, entrega a SharePoint y retención de Litestream.
-10. **Dirección:** `refinia-ptar.web.app` (Firebase, con la cookie `__session`) o `run.app` directo.
-11. **Nombre** de la app.
-12. **Reglas del análisis semanal (ICAV):** se definen al llegar a esa fase.
+10. **Nombre** de la app.
+11. **Reglas del análisis semanal (ICAV):** se definen al llegar a esa fase.
 
 ## 16. Archivos de referencia
 
