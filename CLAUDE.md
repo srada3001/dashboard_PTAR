@@ -5,8 +5,9 @@
 **La especificación completa está en [docs/REQUISITOS.md](docs/REQUISITOS.md). Léela antes de proponer o implementar cualquier cambio de alcance, de modelo de datos o de reglas.** Las decisiones abiertas están en su §15: no las des por resueltas; si una tarea depende de una, pregunta.
 
 ## Estado
-- Fase 0 en código: proyecto base, usuarios con roles y ámbitos, login con bloqueo, catálogos y límites en el admin con registro de auditoría, estética RefinIA, pantallas por rol y archivos de despliegue. Falta el primer despliegue en Google Cloud.
-- Fase 1 (importación del histórico) sin empezar: todavía no hay mediciones.
+- Fase 0 hecha y desplegada: proyecto base, usuarios con roles y ámbitos, login con bloqueo, catálogos y límites en el admin con registro de auditoría, estética RefinIA, pantallas por rol.
+- Producción: https://dashboard-ptar-248156452075.us-east1.run.app (servicio `dashboard-ptar`). Se despliega a mano con `scripts/gcp/deploy.sh`, como Avante, nunca con cada push: la base vive en el contenedor y un despliegue mientras alguien captura pierde esos cambios.
+- Fase 1 (importación del histórico) implementada: mediciones con historial, catálogo inicial, mapeos e importación con informe. El histórico (unas 636.000 mediciones) está importado en la base local; falta revisar el informe y llevar la base a producción con `scripts/gcp/replace-db.sh` (decidido: la base local reemplaza la de producción).
 
 ## Stack
 - Igual que Avante (`../avante`), que es la referencia de cómo se hace todo:
@@ -73,6 +74,7 @@
 ## Comandos
 - Instalar dependencias: `uv sync`
 - Servidor local (SQLite, `config.settings.dev`): `uv run python manage.py runserver 8010` (el 8000 lo usa Avante)
+- Importar el histórico (idempotente; `--dry-run` simula): `uv run python manage.py import_history --user <admin> C:/Users/srada/Desktop/referencia_ptar/tabla_referencia_1.xlsx C:/Users/srada/Desktop/referencia_ptar/tabla_referencia_2.xlsx` (unos 2 minutos). El informe queda en Administración → Lotes de importación.
 - Pruebas: `uv run python -m pytest`
 - Revisión de producción: `DJANGO_SETTINGS_MODULE=config.settings.prod uv run python manage.py check --deploy` (requiere `SECRET_KEY` y `ALLOWED_HOSTS`)
 - Migraciones: `uv run python manage.py makemigrations` / `uv run python manage.py migrate`
@@ -81,6 +83,7 @@
   - una vez: `bash scripts/gcp/setup.sh`;
   - en cada despliegue: `bash scripts/gcp/deploy.sh`;
   - primer administrador: `bash scripts/gcp/create-admin.sh`;
+  - reemplazar la base de producción por la local: `bash scripts/gcp/replace-db.sh db.sqlite3`;
   - guía en `docs/DESPLIEGUE.md`.
 
 ## Estructura
@@ -90,6 +93,8 @@
 - `apps/core`: `AuditEntry` y `audit.py` (`AuditedAdmin`: registra antes → después de cada cambio hecho en el admin, también en los inlines), `PrivateCacheMiddleware` (`Cache-Control: private`), `HtmxRedirectMiddleware` y la redirección de inicio por rol.
 - `apps/capture`: página **Captura**; por ahora lista los formatos de la persona. Las rejillas llegan en la fase 3.
 - `apps/dashboards`: **Variables importantes** y **Explorador**; por ahora vacías. Se construyen en la fase 2.
-- Previstas: `apps/measurements` (mediciones, historial y validación) y `apps/imports` (importación del histórico con `import_maps/`, y exportaciones).
+- `apps/measurements`: `Measurement` (formato largo; `time_precision`: hora exacta, a. m., p. m. o solo el día; `taken_at` es el inicio del periodo cuando no hay hora), `MeasurementHistory` (nunca se borra) y `values.py` (qué es un valor: `parse_value`, rangos). En el admin, solo lectura; las correcciones llegan con la captura (fase 3).
+- `apps/imports`: `ImportBatch` (con conteos e informe), `maps.py` (lee `import_maps/`), `catalog.py` (crea el catálogo inicial que falte), `workbook.py` (busca las tablas de Excel en el XML del libro y lee valores y fórmulas), `timeline.py` (redondeo y deducción de horas por la secuencia), `importer.py` y el comando `import_history`.
+- `import_maps/`: `catalog/*.csv` (fuentes, zonas, puntos con alias, parámetros con rango físico) y un mapeo por tabla de Excel (`Tabla1.csv`, `Laboratorio.csv`…), una fila por columna, buscada por su encabezado. Solo encabezados y códigos, nunca valores.
 - `templates/`: `base.html` lleva la barra de RefinIA y el menú según el rol. `static/css/app.css` lleva los tokens y la barra copiados de `refinia-portal`.
-- `docker/` (`start.sh`, `litestream.yml`), `Dockerfile`, `scripts/gcp/` y `docs/DESPLIEGUE.md`: despliegue en Cloud Run.
+- `docker/` (`start.sh`, `litestream.yml`, `fetch_seed.py`), `Dockerfile`, `scripts/gcp/` y `docs/DESPLIEGUE.md`: despliegue en Cloud Run. La carpeta de la réplica en el bucket es `LITESTREAM_PATH` (por defecto `db`); `replace-db.sh` empieza una nueva.

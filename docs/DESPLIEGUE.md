@@ -99,6 +99,29 @@ bash scripts/gcp/deploy.sh
 
 Las migraciones pendientes se aplican solas cuando arranca la nueva versión.
 
+## 7. Llevar a producción la base local (histórico)
+
+El histórico se importa y se revisa en local (REQUISITOS.md §9). Después, la base local reemplaza la de producción:
+
+```bash
+bash scripts/gcp/replace-db.sh db.sqlite3
+```
+
+1. Revisa la base, la compacta y muestra qué va: mediciones, variables y personas.
+2. Pide escribir «reemplazar». **Lo que se haya creado en producción no pasa a la base nueva**, y viaja todo lo de la local, también sus usuarios: revisa antes en Administración las personas de la base local (desactiva o cambia la contraseña de las de prueba).
+3. Sube la base a `gs://<bucket>/seed/` y reinicia el servicio con una carpeta de réplica nueva (`LITESTREAM_PATH=db-<fecha>`). Al arrancar, la app no encuentra réplica allí, descarga la base subida, comprueba su huella y su integridad, aplica las migraciones y empieza a replicarla. Desde ese momento todo sigue como siempre.
+
+La réplica anterior queda intacta en su carpeta. Para volver a ella, el script imprime el comando, del estilo:
+
+```bash
+gcloud run services update dashboard-ptar --region us-east1 --update-env-vars LITESTREAM_PATH=db
+```
+
+- Hazlo cuando nadie esté usando el dashboard, como un despliegue.
+- Las sesiones abiertas se cierran: todos vuelven a entrar.
+- `deploy.sh` conserva `LITESTREAM_PATH` (usa `--update-env-vars`), así que los despliegues siguientes siguen con la base nueva.
+- La base con el histórico pesa unos 230 MB y vive en la memoria del contenedor (1 GiB). Si los logs muestran que se queda sin memoria al arrancar, sube `--memory` a `2Gi` en `deploy.sh` y vuelve a desplegar.
+
 ## Problemas comunes
 
 **Logs de la app** (incluye la restauración de la base y las migraciones):

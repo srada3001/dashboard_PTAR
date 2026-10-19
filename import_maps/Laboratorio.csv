@@ -1,0 +1,185 @@
+header,action,point,parameter,source,time,frequency,note
+Fecha,date,,,,,,
+ClarifiA Flujo,import,Clarificador A,Flujo,Por confirmar,day,,
+ClarifiB Flujo,import,Clarificador B,Flujo,Por confirmar,day,,
+ClarifiC Flujo,import,Clarificador C,Flujo,Por confirmar,day,,
+ClarifiD Flujo,import,Clarificador D,Flujo,Por confirmar,day,,
+BA4002 Fenol,import,BA-4002,Fenoles,Labviewer,day,,
+BA4002 RSH,import,BA-4002,RSH,Labviewer,day,,
+BA4002 H2S,import,BA-4002,H2S,Labviewer,day,,
+BA4002 DQO,import,BA-4002,DQO,Labviewer,day,,
+BA4002 NH3,import,BA-4002,NH3,Labviewer,day,,
+BA4002 G&A,import,BA-4002,G&A,Labviewer,day,,
+BA4002 ST,import,BA-4002,ST,Labviewer,day,,
+BA4002 SS,import,BA-4002,SS,Labviewer,day,,
+TOTAL FLUJO CLARIFICADORES,skip,,,,,,Suma de los cuatro clarificadores (fórmula).
+BA4005A/B RSH,import,BA-4005A/B,RSH,Labviewer,day,,
+BA4005A/B H2S,import,BA-4005A/B,H2S,Labviewer,day,,
+BA4005A/B NH3,import,BA-4005A/B,NH3,Labviewer,day,,
+BA4005A/B G&A,import,BA-4005A/B,G&A,Labviewer,day,,
+BA4005A/B SS,import,BA-4005A/B,SS,Labviewer,day,,
+Flujo Entrega Recirculacion,import,Recirculación,Flujo,Por confirmar,day,,
+BA4001 Fenol,import,BA-4001,Fenoles,Labviewer,day,,
+BA4001 RSH,import,BA-4001,RSH,Labviewer,day,,
+BA4001 H2S,import,BA-4001,H2S,Labviewer,day,,
+BA-4001 NITROGENO TOTAL,import,BA-4001,N total,Labviewer,day,,
+BA4001 G&A,import,BA-4001,G&A,Labviewer,day,,
+BA4001 ST,import,BA-4001,ST,Labviewer,day,,
+BA4001 SS,import,BA-4001,SS,Labviewer,day,,
+BA4001 FE,import,BA-4001,Hierro,Labviewer,day,,
+BA4001 DQO,import,BA-4001,DQO,Labviewer,day,,
+BA4001,import,BA-4001,Conductividad,Labviewer,day,,Encabezado de grupo: CONDUCTIVIDAD A 25 C.
+BA4005C/D RSH,import,BA-4005C/D,RSH,Labviewer,day,,
+BA4005C/D H2S,import,BA-4005C/D,H2S,Labviewer,day,,
+BA4005C/D FE,import,BA-4005C/D,Hierro,Labviewer,day,,
+BA4005C/D NH3,import,BA-4005C/D,NH3,Labviewer,day,,
+BA4005C/D G&A,import,BA-4005C/D,G&A,Labviewer,day,,
+BA4005C/D SS,import,BA-4005C/D,SS,Labviewer,day,,
+BA4010 G&A,import,BA-4010,G&A,Labviewer,day,,Bloque BA-4010.
+BA4010 Fenol,import,BA-4010,Fenoles,Labviewer,day,,Bloque BA-4010.
+BA4010 RSH,import,BA-4010,RSH,Labviewer,day,,Bloque BA-4010.
+BA4010 H2S,import,BA-4010,H2S,Labviewer,day,,Bloque BA-4010.
+BA4010 SS,import,BA-4010,SS,Labviewer,day,,Bloque BA-4010.
+BA4010 NH3,import,BA-4010,NH3,Labviewer,day,,Bloque BA-4010.
+BA4010 ST,import,BA-4010,ST,Labviewer,day,,Bloque BA-4010.
+BA4010 DQO,import,BA-4010,DQO,Labviewer,day,,Bloque BA-4010.
+BA-4055 G&A,import,BA-4055,G&A,Labviewer,day,,
+BA-4055 Ph,import,BA-4055,pH,Labviewer,day,,
+BA-4055Fenol,import,BA-4055,Fenoles,Labviewer,day,,
+BA-4055 RSH,import,BA-4055,RSH,Labviewer,day,,
+BA-4055 H2S,import,BA-4055,H2S,Labviewer,day,,
+BA-4055 SS,import,BA-4055,SS,Labviewer,day,,"El encabezado de grupo dice ST, pero la columna se llama SS y sus valores son de SS."
+BA-4055 CL,import,BA-4055,Cloruros,Labviewer,day,,
+BA-4055 CADMIO,import,BA-4055,Cd,Labviewer,day,,
+BA-4055 COBRE,import,BA-4055,Cu,Labviewer,day,,
+BA-4055 CROMO,import,BA-4055,Cr,Labviewer,day,,
+BA-4055 FE,import,BA-4055,Hierro,Labviewer,day,,
+BA-4055 NIQUEL,import,BA-4055,Ni,Labviewer,day,,
+BA-4055PLOMO,import,BA-4055,Pb,Labviewer,day,,
+BA-4055 SELENIO,import,BA-4055,Se,Labviewer,day,,
+BA-4055 VANADIO,import,BA-4055,V,Labviewer,day,,
+BA-4055 ZINC,import,BA-4055,Zn,Labviewer,day,,
+BA-4055NH3,import,BA-4055,NH3,Labviewer,day,,
+BA-4055 NITROGENO TOTAL,import,BA-4055,N total,Labviewer,day,,
+BA-4055 FOSFORO TOTAL,import,BA-4055,P total,Labviewer,day,,
+BA-4055 T°,import,BA-4055,Temperatura,Labviewer,day,,
+BA-4055 S,import,BA-4055,S en aguas,Labviewer,day,,
+BA-4055  SULFATO,import,BA-4055,Sulfatos,Labviewer,day,,
+BA-4055 DBO,import,BA-4055,DBO,Labviewer,day,,
+BA-4055 DQO,import,BA-4055,DQO,Labviewer,day,,
+DNF ENTRADA G&A,import,DNF entrada,G&A,Labviewer,day,,
+DNF ENTRADA SS,import,DNF entrada,SS,Labviewer,day,,
+DNF SALIDA G&A,import,DNF salida,G&A,Labviewer,day,,
+DNF SALIDA SS,import,DNF salida,SS,Labviewer,day,,
+BA4010 G&A ,import,BA-4010 clarificada,G&A,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 Ph,import,BA-4010 clarificada,pH,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA4010 Fenol ,import,BA-4010 clarificada,Fenoles,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA4010 RSH ,import,BA-4010 clarificada,RSH,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA4010 H2S ,import,BA-4010 clarificada,H2S,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA4010 SS ,import,BA-4010 clarificada,SS,Labviewer,day,,"El encabezado de grupo dice ST, pero la columna se llama SS y sus valores son de SS."
+BA4010 CL,import,BA-4010 clarificada,Cloruros,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA4010  CONDUCTIVIDAD,import,BA-4010 clarificada,Conductividad,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 CADMIO ,import,BA-4010 clarificada,Cd,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 COBRE ,import,BA-4010 clarificada,Cu,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 CROMO ,import,BA-4010 clarificada,Cr,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 FE,import,BA-4010 clarificada,Hierro,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 NIQUEL,import,BA-4010 clarificada,Ni,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 PLOMO,import,BA-4010 clarificada,Pb,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 SELENIO,import,BA-4010 clarificada,Se,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 VANADIO,import,BA-4010 clarificada,V,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 ZINC,import,BA-4010 clarificada,Zn,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA4010 NH3 ,import,BA-4010 clarificada,NH3,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 NITROGENO TOTAL,import,BA-4010 clarificada,N total,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 FOSFORO TOTAL,import,BA-4010 clarificada,P total,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010  T°,import,BA-4010 clarificada,Temperatura,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010  S,import,BA-4010 clarificada,S en aguas,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010  SULFATO,import,BA-4010 clarificada,Sulfatos,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 DBO,import,BA-4010 clarificada,DBO,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 DQO,import,BA-4010 clarificada,DQO,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+Columna4,import,BA-4010 clarificada,Conductividad,Labviewer,day,,"Encabezado de grupo: CONDUCTIVIDAD A 25 C, en el bloque de BA-4010 clarificada."
+DIAPAC G&A,import,DIAPAC efluente,G&A,Labviewer,day,,
+DIAPAC SS,import,DIAPAC efluente,SS,Labviewer,day,,
+DIAPAC ST,import,DIAPAC efluente,ST,Labviewer,day,,
+DIAPAC DQO,import,DIAPAC efluente,DQO,Labviewer,day,,
+Raspador Falla,skip,,,,,,"Texto, no es una medición."
+Observaciones,skip,,,,,,"Texto, no es una medición."
+Afluente no conforme,skip,,,,,,"Texto, no es una medición."
+BA4005C/D Temp,skip,,,,,,Columna sin valores.
+Columna1,skip,,,,,,Columna vacía.
+D1170 H2S,import,D-1170,H2S,Labviewer,day,,
+D1170 RSH,import,D-1170,RSH,Labviewer,day,,
+D1170 NH3,import,D-1170,NH3,Labviewer,day,,
+D1170 pH,import,D-1170,pH,Labviewer,day,,
+T2590IN H2S,import,T-2590 entrada,H2S,Labviewer,day,,
+T2590IN RSH,import,T-2590 entrada,RSH,Labviewer,day,,
+T2590IN NH3,import,T-2590 entrada,NH3,Labviewer,day,,
+T2590IN pH,import,T-2590 entrada,pH,Labviewer,day,,
+T2590OUT H2S,import,T-2590 salida,H2S,Labviewer,day,,
+T2590OUT RSH,import,T-2590 salida,RSH,Labviewer,day,,
+T2590OUT NH3,import,T-2590 salida,NH3,Labviewer,day,,
+T2590OUT pH,import,T-2590 salida,pH,Labviewer,day,,
+T4841IN H2S,import,T-4841 entrada,H2S,Labviewer,day,,
+T4841IN RSH,import,T-4841 entrada,RSH,Labviewer,day,,
+T4841IN NH3,import,T-4841 entrada,NH3,Labviewer,day,,
+T4841IN pH,import,T-4841 entrada,pH,Labviewer,day,,
+T4841OUT H2S,import,T-4841 salida,H2S,Labviewer,day,,
+T4841OUT RSH,import,T-4841 salida,RSH,Labviewer,day,,
+T4841OUT NH3,import,T-4841 salida,NH3,Labviewer,day,,
+T4841OUT pH,import,T-4841 salida,pH,Labviewer,day,,
+D305 H2S,import,D-305,H2S,Labviewer,day,,
+D305 RSH,import,D-305,RSH,Labviewer,day,,
+D305 NH3,import,D-305,NH3,Labviewer,day,,
+D305 pH,import,D-305,pH,Labviewer,day,,
+D307 H2S,import,D-307,H2S,Labviewer,day,,
+D307 RSH,import,D-307,RSH,Labviewer,day,,
+D307 NH3,import,D-307,NH3,Labviewer,day,,
+D307 pH,import,D-307,pH,Labviewer,day,,
+T308IN H2S,import,T-308 entrada,H2S,Labviewer,day,,
+T308IN RSH,import,T-308 entrada,RSH,Labviewer,day,,
+T308IN NH3,import,T-308 entrada,NH3,Labviewer,day,,
+T308IN pH,import,T-308 entrada,pH,Labviewer,day,,
+T308OUT H2S,import,T-308 salida,H2S,Labviewer,day,,
+T308OUT RSH,import,T-308 salida,RSH,Labviewer,day,,
+T308OUT NH3,import,T-308 salida,NH3,Labviewer,day,,
+T308OUT pH,import,T-308 salida,pH,Labviewer,day,,
+D503 H2S,import,D-503,H2S,Labviewer,day,,
+D503 RSH,import,D-503,RSH,Labviewer,day,,
+D503 NH3,import,D-503,NH3,Labviewer,day,,
+D503 pH,import,D-503,pH,Labviewer,day,,
+D554 H2S,import,D-554,H2S,Labviewer,day,,
+D554 RSH,import,D-554,RSH,Labviewer,day,,
+D554 NH3,import,D-554,NH3,Labviewer,day,,
+D554 pH,import,D-554,pH,Labviewer,day,,
+D4206 H2S,import,D-4206,H2S,Labviewer,day,,
+D4206 RSH,import,D-4206,RSH,Labviewer,day,,
+D4206 NH3,import,D-4206,NH3,Labviewer,day,,
+D4206 pH,import,D-4206,pH,Labviewer,day,,
+Columna2,skip,,,,,,Columna vacía.
+Acido Carga H2S,skip,,,,,,No se sabe qué mide (4 valores de enero de 2023); decidido no importarla.
+Acido H2SO4,skip,,,,,,No se sabe qué mide (4 valores de enero de 2023); decidido no importarla.
+Acido Carga,skip,,,,,,No se sabe qué mide (4 valores de enero de 2023); decidido no importarla.
+Tea 1,skip,,,,,,No se sabe qué mide (4 valores de enero de 2023); decidido no importarla.
+Tea 2,skip,,,,,,No se sabe qué mide (4 valores de enero de 2023); decidido no importarla.
+Tea 3,skip,,,,,,No se sabe qué mide (4 valores de enero de 2023); decidido no importarla.
+Tea 4,skip,,,,,,No se sabe qué mide (4 valores de enero de 2023); decidido no importarla.
+Tea 6,skip,,,,,,No se sabe qué mide (4 valores de enero de 2023); decidido no importarla.
+Tea 7,skip,,,,,,No se sabe qué mide (4 valores de enero de 2023); decidido no importarla.
+Suma Teas,skip,,,,,,Suma de las teas.
+T2590IN Flujo,import,T-2590 entrada,Flujo,Por confirmar,day,,
+T2590OUT Flujo,import,T-2590 salida,Flujo,Por confirmar,day,,
+T4841IN Flujo,import,T-4841 entrada,Flujo,Por confirmar,day,,
+T4841OUT Flujo,import,T-4841 salida,Flujo,Por confirmar,day,,
+Ppulmon Nivel,import,Piscina pulmón,Nivel,Por confirmar,day,,
+Amador pH,import,Amador,pH,Labviewer,day,,
+Alquilación pH,import,Alquilación,pH,Labviewer,day,,
+Ppulmon pH,import,Piscina pulmón,pH,Labviewer,day,,Encabezado de grupo: PH Salida.
+Columna3,skip,,,,,,Fórmula rota (#REF!).
+Frac Verti,skip,,,,,,Fórmula rota (#REF!).
+Fra Reuso,skip,,,,,,Fórmula rota (#REF!).
+% remo G&A,skip,,,,,,Fórmula (% de remoción).
+% remo SS,skip,,,,,,Fórmula (% de remoción).
+%Remo G&A 05A/B,skip,,,,,,Fórmula (% de remoción).
+%Remo SS 05A/B,skip,,,,,,Fórmula (% de remoción).
+%Remo G&A 05C/D,skip,,,,,,Fórmula (% de remoción).
+%Remo SS 05C/D,skip,,,,,,Fórmula (% de remoción).
+Carga Total,skip,,,,,,Fórmula (carga total).

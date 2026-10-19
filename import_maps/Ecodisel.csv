@@ -1,0 +1,8 @@
+header,action,point,parameter,source,time,frequency,note
+Fecha,date,,,,,,
+EcoDisel Fenol,import,Ecodiesel,Fenoles,Por confirmar,day,occasional,
+EcoDisel DQO,import,Ecodiesel,DQO,Por confirmar,day,occasional,
+EcoDisel GyA,import,Ecodiesel,G&A,Por confirmar,day,occasional,
+EcoDisel SST,import,Ecodiesel,SST,Por confirmar,day,occasional,
+EcoDisel PH,import,Ecodiesel,pH,Por confirmar,day,occasional,
+EcoDisel Sulfatos,import,Ecodiesel,Sulfatos,Por confirmar,day,occasional,

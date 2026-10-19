@@ -5,7 +5,7 @@ dbs:
     replicas:
       - type: gcs
         bucket: ${LITESTREAM_BUCKET}
-        path: db
+        path: ${LITESTREAM_PATH}
         sync-interval: 1s
         # Daily snapshots, kept 3 days: the database can be restored to any moment in that window.
         # The retention is still to be decided (docs/REQUISITOS.md §15); 3 days is Avante's value.

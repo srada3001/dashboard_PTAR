@@ -1,0 +1,38 @@
+<div class="import-report">
+  <style>
+    .import-report table { margin: 0 0 1.5em; }
+    .import-report h3 { margin: 1.5em 0 .5em; }
+    .import-report td.num { text-align: right; }
+  </style>
+  <h3>Conteos</h3>
+  <table>
+    {% for label, value in counts %}<tr><td>{{ label }}</td><td class="num">{{ value }}</td></tr>{% endfor %}
+  </table>
+
+  {% if unmapped %}<h3>Encabezados del Excel sin mapeo (no se importaron)</h3><p>{{ unmapped|join:" · " }}</p>{% endif %}
+  {% if missing %}<h3>Encabezados del mapeo que no están en el Excel</h3><p>{{ missing|join:" · " }}</p>{% endif %}
+
+  {% for section in sections %}{% if section.rows %}
+  <h3>{{ section.title }} ({{ section.rows|length }})</h3>
+  <table>
+    <thead><tr>{% for header in section.headers %}<th>{{ header }}</th>{% endfor %}</tr></thead>
+    <tbody>{% for row in section.rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+  </table>
+  {% endif %}{% endfor %}
+
+  <h3>Columnas</h3>
+  <table>
+    <thead><tr><th>Encabezado</th><th>Acción</th><th>Variable</th><th>Valores</th><th>Importados</th><th>NaN</th><th>Fórmulas</th><th>Nota</th></tr></thead>
+    <tbody>{% for column in columns %}
+      <tr>
+        <td>{{ column.header }}</td><td>{{ column.action }}</td><td>{{ column.variable }}</td>
+        <td class="num">{{ column.values }}</td><td class="num">{{ column.imported }}</td>
+        <td class="num">{{ column.nan }}</td><td class="num">{{ column.formulas }}</td><td>{{ column.note }}</td>
+      </tr>{% endfor %}
+    </tbody>
+  </table>
+
+  {% if catalog_created %}<h3>Catálogo creado ({{ catalog_created|length }})</h3><p>{{ catalog_created|join:" · " }}</p>{% endif %}
+  {% if catalog_warnings %}<h3>Avisos del catálogo</h3><p>{{ catalog_warnings|join:" · " }}</p>{% endif %}
+  {% if variables_created %}<h3>Variables creadas ({{ variables_created|length }})</h3><p>{{ variables_created|join:" · " }}</p>{% endif %}
+</div>

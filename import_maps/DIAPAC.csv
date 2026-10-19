@@ -1,0 +1,18 @@
+header,action,point,parameter,source,time,frequency,note
+Fecha,date,,,,,,
+DQO,import,DIAPAC afluente,DQO,Por confirmar,day,occasional,"Domingo, afluente."
+N-T,import,DIAPAC afluente,N total,Por confirmar,day,occasional,"Domingo, afluente."
+FOSFORO,import,DIAPAC afluente,P total,Por confirmar,day,occasional,"Domingo, afluente."
+SOL SED,import,DIAPAC cámara A,SSED,Por confirmar,day,occasional,"Domingo, cámara A."
+SST ,import,DIAPAC cámara A,SST,Por confirmar,day,occasional,"Domingo, cámara A."
+MICROBIOLOGIA,import,DIAPAC cámara A,Recuento,Por confirmar,day,occasional,"Domingo, cámara A."
+SOL SED2,import,DIAPAC cámara B,SSED,Por confirmar,day,occasional,"Domingo, cámara B."
+SST 3,import,DIAPAC cámara B,SST,Por confirmar,day,occasional,"Domingo, cámara B."
+MICROBIOLOGIA4,import,DIAPAC cámara B,Recuento,Por confirmar,day,occasional,"Domingo, cámara B."
+DQO5,import,DIAPAC cámara A,DQO,Por confirmar,day,occasional,"Martes, cámara A."
+SST 6,import,DIAPAC cámara A,SST,Por confirmar,day,occasional,"Martes, cámara A."
+GYA,import,DIAPAC cámara A,G&A,Por confirmar,day,occasional,"Martes, cámara A."
+DQO7,import,DIAPAC cámara B,DQO,Por confirmar,day,occasional,"Martes, cámara B."
+SST 8,import,DIAPAC cámara B,SST,Por confirmar,day,occasional,"Martes, cámara B."
+GYA9,import,DIAPAC cámara B,G&A,Por confirmar,day,occasional,"Martes, cámara B."
+GYA10,skip,,,,,,Sin cámara ni día en el encabezado (4 valores); decidido no importarla.

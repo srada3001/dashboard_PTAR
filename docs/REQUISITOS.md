@@ -1,7 +1,7 @@
 # Dashboard PTAR — Requisitos y lineamientos
 
 > Documento vivo. Cuando una decisión cambie, se actualiza aquí primero.
-> Última actualización: 2026-10-17. Hay decisiones abiertas (§15); lo que dependa de ellas está marcado como **pendiente**.
+> Última actualización: 2026-10-18. Hay decisiones abiertas (§15); lo que dependa de ellas está marcado como **pendiente**.
 
 ## 1. Contexto y objetivo
 
@@ -128,7 +128,8 @@ Nombres de ejemplo en inglés para el código; la interfaz va en español.
   - el **rango habitual opcional** (`typical_min`, `typical_max`): si está definido, fuera de él se pide confirmar. Si el parámetro tiene rango físico, el habitual debe quedar dentro de él;
   - la `time_resolution` (cada hora, 7 a. m. y 4 p. m., diaria o eventual);
 - **Measurement** (Medición):
-  - `variable` y `taken_at` (fecha y hora de la muestra, hora de Bogotá). Si la fuente solo da el día (Labviewer), se guarda el día con `time_known = False`, sin inventar una hora.
+  - `variable` y `taken_at` (fecha y hora de la muestra, hora de Bogotá).
+  - `time_precision` (precisión de la hora): hora exacta, a. m., p. m. o solo el día. **No se inventan horas:** si la fuente solo da el día (Labviewer), se guarda el día; si solo dice "a. m." o "p. m." («A.AGRIAS SEP.»), se guarda eso. En esos casos `taken_at` es el inicio del periodo (00:00 para el día y la mañana, 12:00 para la tarde) y la interfaz muestra la fecha con "a. m.", "p. m." o sin hora.
   - `value`: siempre un número.
   - `qualifier` (calificador): vacío, `<` o `>`. "< 0,1" quiere decir que el valor está por debajo de 0,1, normalmente el límite de detección del laboratorio. `value` guarda el número que acompaña al signo.
   - **No hay estados.** ND, FS, SB, NA y similares significan que no se tiene un valor, y **un dato que no hay (NaN) no se guarda:** no hay fila.
@@ -139,7 +140,7 @@ Nombres de ejemplo en inglés para el código; la interfaz va en español.
 - **MeasurementHistory** (Historial): cada creación, corrección o borrado de una medición. Guarda la variable, la fecha y hora, el valor antes → después (vacío al crear o al borrar), quién, cuándo y un motivo opcional. **El historial nunca se borra**, así que borrar una medición no hace perder nada. Solo lectura.
 - **Limit** (Límite): `point`, `parameter`, `kind` (límite de vertimiento, máximo de diseño en la entrada, ventana operativa u otro), `min`, `max`, `valid_from`, `valid_to` y `reference` (de dónde sale). Aplica a todas las fuentes del par punto-parámetro. Cada muestra se evalúa con el límite vigente en su fecha. Dos límites del mismo tipo para el mismo punto y parámetro no pueden tener vigencias que se crucen: cuando un límite cambia, se le pone fecha de fin al anterior y se crea uno nuevo.
 - **CaptureForm** (Formato de captura): `name`, `source`, `schedule` (cada hora, 7 a. m. y 4 p. m., diaria o eventual) y la lista ordenada de variables que lo componen. Se configura en el admin: añadir un punto o un parámetro no requiere programar.
-- **ImportBatch** (Lote de importación): archivo, hoja, fecha, quién lo corrió, conteos e informe.
+- **ImportBatch** (Lote de importación): archivo, hoja y tabla, fecha, quién lo corrió, si fue en seco, conteos e informe. La creación de cada medición importada queda en el historial con su lote.
 - **AuditEntry** (Registro de auditoría): cambios en usuarios, catálogos, rangos y límites. Solo lectura en el admin.
 
 **Volumen:** unas 635.000 mediciones históricas (438.000 de la tabla 1 y 197.000 de la tabla 2) y menos de 300.000 nuevas al año. SQLite lo maneja sin problema.
@@ -237,9 +238,14 @@ Gráficas con ECharts, como el dashboard U044.
 
 **Mapeo:**
 - Un archivo por hoja, versionado en el repositorio, con una fila por columna de Excel: punto, parámetro, fuente y hora.
-- La hora es la de la fila en la tabla 1; 07:00 o 16:00 en las muestras de 7 a. m. y 4 p. m.; y "sin hora" en las diarias.
-- El mapeo solo contiene encabezados, nunca valores.
-- No se importan las columnas de fórmulas (% de remoción, carga total, sumas, F/M) ni las vacías ("Blanco n", "ColumnaN").
+- La hora es la de la fila en la tabla 1; 07:00 o 16:00 en las muestras de 7 a. m. y 4 p. m.; "a. m." o "p. m." en «A.AGRIAS SEP.»; y "solo el día" en las diarias.
+- El mapeo solo contiene encabezados, nunca valores. Las columnas se buscan por su encabezado, no por su posición; un encabezado que no está en el mapeo se reporta.
+- No se importan las columnas de fórmulas (% de remoción, carga total, sumas, F/M, IVL) ni las vacías ("Blanco n", "ColumnaN"). Tampoco las celdas con fórmula dentro de columnas de datos (por ejemplo, un `=SUM(...)` pegado en una columna de RSH): no son mediciones.
+- **Catálogo inicial:** `import_maps/catalog/` trae las fuentes, zonas, puntos y parámetros (con su rango físico). La importación crea los que falten, sin cambiar los que ya existen, y crea cada variable solo cuando tiene al menos un valor.
+- **Fuente provisional «Por confirmar»** para «A.AGRIAS SEP.», «K-SODAS», «DIAPAC», «ECODIESEL» y los flujos y niveles de «Datos LABORATORIO» (clarificadores, recirculación, T-2590, T-4841, piscina pulmón). Cuando se sepa la fuente, se cambia en el admin la fuente de esas variables, sin reimportar. Los flujos de BA4005C/D de la tabla 1 son de PI.
+- **Nombres sin equivalencia decidida** (§15, pendiente 4) se importan como parámetros aparte: "SS", "NH3", "H2S", "RSH", "S en aguas" y "DBO" de Labviewer no se mezclan con SST, N-NH3, sulfuros ni DBO5. Si después se decide que son lo mismo, basta cambiar el parámetro de esas variables en el admin.
+- "BA-4010" y "BA-4010 clarificada" de «Datos LABORATORIO» se importan como dos puntos (§15, pendiente 5). En «FASE I», "BA4008 ENTRADA" y "BA4008 SALIDA" (nitrógeno) son los puntos «BA-4008 entrada» y «BA-4008 salida».
+- No se importan: «Tea 1» a «Tea 7» y el bloque de ácido (no se sabe qué miden; 4 valores cada uno) ni «GYA10» de «DIAPAC» (sin cámara).
 
 **Normalización:**
 - **Los valores no numéricos quedan como NaN:** no se importan.
@@ -251,10 +257,14 @@ Gráficas con ECharts, como el dashboard U044.
   - **nunca se corrigen solos**: se importan marcados como dudosos;
   - no entran en las gráficas ni en la estadística;
   - una persona decide si se corrigen (73 → 7,3) o se borran.
-- Las horas corridas (06:59 → 07:00) se redondean a la hora. Los duplicados de fecha y hora y las fechas imposibles (años 1900 y 1903) se reportan.
+- Las horas corridas (06:59 → 07:00) se redondean a la hora.
+- **Fechas mal escritas en la tabla 1** (por ejemplo, "2022-07-12 15:59" entre "2022-07-11 16:00" y "18:00", o filas que avanzan de a un día): la hora se **deduce por la secuencia** solo cuando las filas vecinas la fijan sin duda (entre 16:00 y 18:00 va 17:00; un tramo de n filas entre dos horas separadas n + 1 horas). Cada fecha deducida va al informe. Las filas cuya hora no se puede deducir no se importan y se reportan.
+- Las fechas imposibles (años 1900 y 1903) y las futuras no se importan, salvo que la secuencia las deduzca; se reportan.
+- **Duplicados:** si la misma variable tiene el mismo valor dos veces para la misma fecha y hora, se importa una vez. Si tiene valores distintos, **no se importa ninguno**: los dos van al informe y una persona captura después el correcto.
 
 **Proceso:**
-- Un script idempotente, que se puede correr en seco (`--dry-run`), y un informe de lo que no se pudo mapear, quedó como NaN o quedó dudoso.
+- Un script idempotente, que se puede correr en seco (`--dry-run`), y un informe de lo que no se pudo mapear, quedó como NaN o quedó dudoso. Volver a correrlo no duplica nada ni cambia lo que ya está en la base: un valor que ya existe con otro número se reporta y no se toca.
+- **Se importa en local y se revisa el informe allí.** Después, la base local reemplaza la de producción (decidido el 2026-10-18): se pierde lo que se haya creado en producción, y viaja lo que haya en la base local, también sus usuarios. El procedimiento está en `docs/DESPLIEGUE.md`.
 - **Claude (el asistente de desarrollo) revisa uno por uno los valores que no se mapean automáticamente** y propone su mapeo. **Cuando no puede decidir con certeza, consulta al usuario** antes de importar. No se inventan mapeos dudosos.
 - Los Excel originales se conservan fuera del repositorio como respaldo.
 
@@ -346,6 +356,16 @@ Cada fase se entrega funcionando y con pruebas. Prioridad de las pruebas:
 ### Decidido el 2026-10-17
 - **Dirección:** https://refinia-ptar.web.app, por Firebase Hosting, como las otras herramientas de RefinIA (§11). La de `run.app` sigue funcionando.
 
+### Decidido el 2026-10-18 (importación del histórico, §9)
+- **Hora a. m. / p. m.:** se guarda como "a. m." o "p. m.", sin suponer una hora. Por eso la medición tiene una precisión de la hora (exacta, a. m., p. m. o solo el día) en lugar de "hora conocida sí/no".
+- **Fechas mal escritas en «Entrada de Datos»:** se deducen por la secuencia cuando las vecinas las fijan sin duda; las demás no se importan.
+- **Duplicados con valores distintos:** no se importa ninguno; van al informe.
+- **Fuente de separadores y agua agria, sodas, DIAPAC, Ecodiesel y de los flujos de «Datos LABORATORIO»:** provisional, «Por confirmar» (pendiente 7).
+- **BA4008 ENTRADA y SALIDA:** dos puntos nuevos, «BA-4008 entrada» y «BA-4008 salida».
+- **«Flujo Entrega Recirculacion»:** punto «Recirculación». **«GYA10»**, teas y ácido: no se importan.
+- **"DBO" de Labviewer:** parámetro aparte, sin asumir que es DBO5.
+- **Producción:** la base local, con el histórico importado y revisado, reemplaza la de producción.
+
 ### Pendientes
 1. **Tableristas:** ¿tienen lectura o son capturistas sin lectura?
 2. **Capturista:** ¿ve lo ya registrado en su formato para esa fecha y hora, para no duplicar ni pisar datos? ¿Puede corregir sus propias capturas recientes? Propuesta: sí a ambas, solo dentro de su ámbito y solo las de las últimas 24 horas.
@@ -358,7 +378,7 @@ Cada fase se entrega funcionando y con pruebas. Prioridad de las pruebas:
 6. **Límites que no coinciden:**
    - Ventana de pH: 6,4–8,5 en la hoja de límites de la tabla 1 y 6,5–8,5 en «Datos Calidad Fase 1». Es la que se dibuja en la vista de pH.
    - Entrada: los máximos de BA-4001 (40 °C, SST 470, fenol 55) contra «Datos Calidad Fase 1» (menos de 44 °C, SST menor de 600, fenol menor de 40).
-7. **Fuente** de los datos de separadores y agua agria, sodas, DIAPAC y Ecodiesel.
+7. **Fuente** de los datos de separadores y agua agria, sodas, DIAPAC y Ecodiesel, y de los flujos y niveles de «Datos LABORATORIO». Mientras tanto, «Por confirmar».
 8. **Columnas casi vacías desde 2023** en «Datos LABORATORIO» (aguas agrias T-2590 y otras, teas, ácido, piscina pulmón): se importan, pero ¿se siguen capturando?
 9. **Respaldo:** frecuencia de la exportación automática, entrega a SharePoint y retención de Litestream.
 10. **Nombre** de la app.

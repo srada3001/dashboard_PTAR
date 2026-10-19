@@ -1,6 +1,7 @@
 #!/bin/sh
 # Container startup on Cloud Run:
-#   1. restore the SQLite database from Cloud Storage (if this instance has no copy yet),
+#   1. restore the SQLite database from Cloud Storage (if this instance has no copy yet) or, the
+#      first time after scripts/gcp/replace-db.sh, download the database that replaces it,
 #   2. apply migrations and create the first administrator if requested,
 #   3. serve the app while Litestream replicates every change to Cloud Storage (~1 s).
 # Needs a single instance and "CPU always allocated" (see scripts/gcp/deploy.sh).
@@ -16,8 +17,16 @@ done
 
 CONFIG=/app/docker/litestream.yml
 mkdir -p "$(dirname "$DATABASE_PATH")"
+# Folder of the replica in the bucket. replace-db.sh starts a new one, so the old one is kept.
+export LITESTREAM_PATH="${LITESTREAM_PATH:-db}"
 
 litestream restore -config "$CONFIG" -if-db-not-exists -if-replica-exists "$DATABASE_PATH"
+
+# A replaced database (replace-db.sh) has no replica yet: it starts from the file uploaded.
+# Once Litestream has replicated it, the replica exists and is restored instead.
+if [ ! -f "$DATABASE_PATH" ] && [ -n "${PTAR_SEED_DB:-}" ]; then
+    python docker/fetch_seed.py "$LITESTREAM_BUCKET" "$PTAR_SEED_DB" "$DATABASE_PATH" "${PTAR_SEED_SHA256:-}"
+fi
 
 python manage.py migrate --noinput
 python manage.py create_initial_admin --from-env

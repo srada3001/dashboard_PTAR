@@ -1,0 +1,10 @@
+header,action,point,parameter,source,time,frequency,note
+Fecha,date,,,,,,
+BR4081 pH am,import,BR-4081,pH,BIOTA,07:00,,Encabezado de grupo: pH 7 am.
+BR4081 Fenol am,import,BR-4081,Fenoles,BIOTA,07:00,,Encabezado de grupo: FENOL 7 am.
+BR4081 SST am,import,BR-4081,SST,BIOTA,07:00,,Encabezado de grupo: SST 7 am.
+BR4081 S.SED am,import,BR-4081,SSED,BIOTA,07:00,,Encabezado de grupo: S.SED ml/L 7 am.
+BR4081 Recuento,import,BR-4081,Recuento,BIOTA,day,,
+BR4081 pH pm,import,BR-4081,pH,BIOTA,16:00,,Encabezado de grupo: pH 4 pm.
+BR4081 Fenol pm,import,BR-4081,Fenoles,BIOTA,16:00,,Encabezado de grupo: FENOL 4 pm.
+BR4081 SST pm,import,BR-4081,SST,BIOTA,16:00,,Encabezado de grupo: SST 4 pm.

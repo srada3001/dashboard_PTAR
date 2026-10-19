@@ -25,6 +25,8 @@ INSTALLED_APPS = [
     "apps.catalog",
     "apps.accounts",
     "apps.core",
+    "apps.measurements",
+    "apps.imports",
     "apps.capture",
     "apps.dashboards",
 ]

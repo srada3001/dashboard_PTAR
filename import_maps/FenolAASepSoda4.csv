@@ -1,0 +1,42 @@
+header,action,point,parameter,source,time,frequency,note
+Fecha,date,,,,,,
+AA Fenol,import,Agua agria,Fenoles,Por confirmar,day,,
+AA ph,import,Agua agria,pH,Por confirmar,day,,
+AA Temp,import,Agua agria,Temperatura,Por confirmar,day,,
+AA DQO,import,Agua agria,DQO,Por confirmar,day,,
+SE3050 Fenol,import,SE-3050,Fenoles,Por confirmar,day,,
+SE3050 ph,import,SE-3050,pH,Por confirmar,day,,
+SE3050 DQO,import,SE-3050,DQO,Por confirmar,day,,
+sep3050SO4,import,SE-3050,Sulfatos,Por confirmar,day,,
+SE3010 Fenol am,import,SE-3010,Fenoles,Por confirmar,am,,
+SE3010 ph am,import,SE-3010,pH,Por confirmar,am,,
+SE3010 DQO am,import,SE-3010,DQO,Por confirmar,am,,
+SEP3010 SO4,import,SE-3010,Sulfatos,Por confirmar,am,,a. m. por su posición: la columna de SO4 cierra la mitad de la mañana.
+SE3010 Fenol pm,import,SE-3010,Fenoles,Por confirmar,pm,,
+SE3010 ph pm,import,SE-3010,pH,Por confirmar,pm,,
+SE3010 DQO pm,import,SE-3010,DQO,Por confirmar,pm,,
+SEP3010 SO42,import,SE-3010,Sulfatos,Por confirmar,pm,,p. m. por su posición: la columna de SO4 cierra la mitad de la tarde.
+SEP3020 Fenol,import,SE-3020,Fenoles,Por confirmar,am,,Encabezado de grupo: FENOL am.
+SEP3020 pH AM,import,SE-3020,pH,Por confirmar,am,,
+SEO3020 DQO AM,import,SE-3020,DQO,Por confirmar,am,,
+SEP3020 SO4,import,SE-3020,Sulfatos,Por confirmar,am,,a. m. por su posición: la columna de SO4 cierra la mitad de la mañana.
+SEP3020 FENOL PM,import,SE-3020,Fenoles,Por confirmar,pm,,
+SEP3020 PH PM,import,SE-3020,pH,Por confirmar,pm,,
+SEP 3020 DQO PM,import,SE-3020,DQO,Por confirmar,pm,,
+SEP3020 SO42,import,SE-3020,Sulfatos,Por confirmar,pm,,p. m. por su posición: la columna de SO4 cierra la mitad de la tarde.
+SE3030 Fenol am,import,SE-3030,Fenoles,Por confirmar,am,,
+SE3030 ph am,import,SE-3030,pH,Por confirmar,am,,
+SE3030 DQO am,import,SE-3030,DQO,Por confirmar,am,,
+SEP3030 SO4,import,SE-3030,Sulfatos,Por confirmar,am,,a. m. por su posición: la columna de SO4 cierra la mitad de la mañana.
+SE3030 Fenol pm,import,SE-3030,Fenoles,Por confirmar,pm,,
+SE3030 ph pm,import,SE-3030,pH,Por confirmar,pm,,
+SE3030 DQO pm,import,SE-3030,DQO,Por confirmar,pm,,
+SEP3030 SO42,import,SE-3030,Sulfatos,Por confirmar,pm,,p. m. por su posición: la columna de SO4 cierra la mitad de la tarde.
+SE3060 Fenol am,import,SE-3060,Fenoles,Por confirmar,am,,
+SE3060 ph am,import,SE-3060,pH,Por confirmar,am,,
+SE3060 DQO am,import,SE-3060,DQO,Por confirmar,am,,
+SEP 3060 SO4,import,SE-3060,Sulfatos,Por confirmar,am,,a. m. por su posición: la columna de SO4 cierra la mitad de la mañana.
+SE3060 Fenol pm,import,SE-3060,Fenoles,Por confirmar,pm,,
+SE3060 ph pm,import,SE-3060,pH,Por confirmar,pm,,
+SE3060 DQO pm,import,SE-3060,DQO,Por confirmar,pm,,
+SEP 3060 SO42,import,SE-3060,Sulfatos,Por confirmar,pm,,p. m. por su posición: la columna de SO4 cierra la mitad de la tarde.

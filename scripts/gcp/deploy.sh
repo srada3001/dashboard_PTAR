@@ -31,11 +31,13 @@ echo "1/2 Construyendo la imagen en Cloud Build ($TAG)..."
 gcloud builds submit --tag "$IMAGE:$TAG" .
 
 echo "2/2 Desplegando en Cloud Run..."
+# --update-env-vars keeps the variables set by other scripts (LITESTREAM_PATH and the seed of
+# replace-db.sh, PTAR_INITIAL_ADMIN): replacing them would bring an old database back.
 # One instance only (the SQLite database lives in it) and CPU always allocated, so Litestream
 # copies every change to Cloud Storage within about a second. Scales to zero when idle.
 # 1 GiB: the filesystem (database, Litestream files, temporary files) lives in memory.
 gcloud run deploy "$SERVICE" --image "$IMAGE:$TAG" --region "$REGION" --service-account "$RUN_SA" \
-    --allow-unauthenticated --set-env-vars "$APP_ENV" --set-secrets "$APP_SECRETS" \
+    --allow-unauthenticated --update-env-vars "$APP_ENV" --set-secrets "$APP_SECRETS" \
     --min-instances 0 --max-instances 1 --no-cpu-throttling --execution-environment gen2 \
     --cpu 1 --memory 1Gi
 
