@@ -75,7 +75,7 @@ bash scripts/gcp/create-admin.sh
 Pide el usuario (nombre corto) y el nombre completo, reinicia la app con ese pedido y muestra **una contraseña temporal**. Entra con ella: la app te pedirá cambiarla de inmediato.
 
 - La contraseña temporal queda en los logs de Cloud Run, que solo ve quien administra el proyecto. Por eso es de un solo uso.
-- Si ya existe un administrador, el script no crea otro.
+- Si ya existe una persona con ese usuario, no se crea ni se cambia nada: el script no sirve para restablecer contraseñas. Sí sirve para recuperar el acceso después de `replace-db.sh`, si tu cuenta no estaba en la base local.
 - Las demás personas las creas desde **Administración** dentro de la app, cada una con su rol y sus formatos de captura.
 
 ## 5. Entrada desde RefinIA

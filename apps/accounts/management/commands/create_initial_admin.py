@@ -12,7 +12,8 @@ class Command(BaseCommand):
     help = (
         "Creates an administrator with a random temporary password, printed once. "
         "The person must replace it at first login. With --from-env it reads "
-        f"{ENV_VAR} and does nothing if an administrator already exists (run at every startup)."
+        f"{ENV_VAR} and does nothing if that username already exists (run at every startup): "
+        "it never touches an existing account, so the variable can stay set."
     )
 
     def add_arguments(self, parser):
@@ -23,10 +24,13 @@ class Command(BaseCommand):
     def handle(self, *args, username, full_name, from_env, **options):
         if from_env:
             value = os.environ.get(ENV_VAR, "").strip()
-            if not value or User.objects.filter(role=User.Role.ADMIN).exists():
+            if not value:
                 return
             username, _, full_name = value.partition(";")
             username, full_name = username.strip(), full_name.strip()
+            # Also after a database replacement (replace-db.sh) that left the person out.
+            if User.objects.filter(username__iexact=username).exists():
+                return
 
         if not username or not full_name:
             raise CommandError("Se necesitan el usuario y el nombre completo.")

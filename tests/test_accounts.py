@@ -176,19 +176,30 @@ class TestCreateInitialAdmin:
         with pytest.raises(CommandError):
             call_command("create_initial_admin", "INGENIERO", "Otra persona")
 
-    def test_from_env_creates_first_admin_once(self, monkeypatch):
+    def test_from_env_creates_the_admin_once(self, monkeypatch):
         monkeypatch.setenv("PTAR_INITIAL_ADMIN", "sebastian;Juan Sebastián Rada Rey")
         out = StringIO()
         call_command("create_initial_admin", "--from-env", stdout=out)
-        assert User.objects.get(username="sebastian").full_name == "Juan Sebastián Rada Rey"
+        admin = User.objects.get(username="sebastian")
+        assert admin.full_name == "Juan Sebastián Rada Rey"
         assert "Contraseña temporal" in out.getvalue()
+        admin.set_password("la-que-eligio-2026")
+        admin.save()
 
-        # Every later startup is a no-op because an administrator now exists.
-        monkeypatch.setenv("PTAR_INITIAL_ADMIN", "otro;Otra Persona")
+        # Every later startup is a no-op: the account exists and is never touched again.
         out = StringIO()
         call_command("create_initial_admin", "--from-env", stdout=out)
-        assert not User.objects.filter(username="otro").exists()
         assert out.getvalue() == ""
+        admin.refresh_from_db()
+        assert admin.check_password("la-que-eligio-2026")
+
+    def test_from_env_creates_the_person_even_if_another_admin_exists(self, monkeypatch, admin_user):
+        # After replace-db.sh the database may only have other administrators (test accounts).
+        monkeypatch.setenv("PTAR_INITIAL_ADMIN", "juan;Juan Sebastián Rada Rey")
+        out = StringIO()
+        call_command("create_initial_admin", "--from-env", stdout=out)
+        assert User.objects.get(username="juan").is_admin
+        assert "Contraseña temporal" in out.getvalue()
 
     def test_from_env_without_variable_does_nothing(self, monkeypatch):
         monkeypatch.delenv("PTAR_INITIAL_ADMIN", raising=False)

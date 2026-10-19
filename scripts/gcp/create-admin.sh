@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates the first administrator: the app creates it at startup with a random temporary
+# Creates an administrator (the first one, or yours after replace-db.sh left it out): the app creates it at startup with a random temporary
 # password, shown here once, which must be changed at first login. Run after deploy.sh,
 # from the repo root in Git Bash: bash scripts/gcp/create-admin.sh
 set -euo pipefail
@@ -10,7 +10,7 @@ require_project
 read -rp "Usuario (nombre corto, sin espacios): " USERNAME
 read -rp "Nombre completo (sin comas ni punto y coma): " FULL_NAME
 
-# Restarts the service with the request; the app creates the admin only if none exists yet.
+# Restarts the service with the request; the app creates the admin only if that username does not exist.
 gcloud run services update "$SERVICE" --region "$REGION" \
     --update-env-vars "PTAR_INITIAL_ADMIN=$USERNAME;$FULL_NAME"
 
@@ -26,4 +26,4 @@ for _ in 1 2 3 4 5 6 7 8 9; do
     sleep 10
 done
 echo "No apareció todavía. Búscala en Cloud Run → $SERVICE → Logs (texto: Contraseña temporal)." >&2
-echo "Si ya existía un administrador, no se crea otro." >&2
+echo "Si ya existía una persona con ese usuario, no se crea ni se cambia nada." >&2
