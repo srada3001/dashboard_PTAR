@@ -6,7 +6,12 @@
   <p class="ayuda">Cualquier parámetro, en uno o varios puntos y fuentes, con estadística descriptiva.</p>
 </header>
 <section class="tarjeta vacio">
+  {% if measurement_count %}
+  <p>El histórico está importado: {{ measurement_count }} mediciones.</p>
+  <p class="ayuda">El explorador se construye en la fase 2.</p>
+  {% else %}
   <p>Todavía no hay mediciones.</p>
   <p class="ayuda">El explorador se construye en la fase 2, después de importar el histórico.</p>
+  {% endif %}
 </section>
 {% endblock %}

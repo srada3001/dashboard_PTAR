@@ -101,7 +101,7 @@ Las migraciones pendientes se aplican solas cuando arranca la nueva versión.
 
 ## 7. Llevar a producción la base local (histórico)
 
-El histórico se importa y se revisa en local (REQUISITOS.md §9). Después, la base local reemplaza la de producción:
+El histórico se importa y se revisa en local (REQUISITOS.md §9). Después, la base local reemplaza la de producción. **Antes, producción debe tener el código de la fase 1 o posterior** (`bash scripts/gcp/deploy.sh`): una versión anterior no sabe usar la base subida y sigue con la vieja. El script lo comprueba en los logs al final.
 
 ```bash
 bash scripts/gcp/replace-db.sh db.sqlite3
