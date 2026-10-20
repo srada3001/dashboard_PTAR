@@ -276,9 +276,3 @@ class TestCommandAndAdmin:
         assert response.status_code == 403
         assert Measurement.objects.filter(pk=measurement.pk).exists()
 
-
-def test_the_pending_pages_say_the_history_is_imported(table1, maps, admin_user, admin_client):
-    assert "Todavía no hay mediciones" in admin_client.get(reverse("important_variables")).content.decode()
-    run(table1, admin_user, maps)
-    for page in ("important_variables", "explorer"):
-        assert "El histórico está importado: 8 mediciones" in admin_client.get(reverse(page)).content.decode()

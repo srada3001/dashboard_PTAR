@@ -8,13 +8,14 @@
 - Fase 0 hecha y desplegada: proyecto base, usuarios con roles y ámbitos, login con bloqueo, catálogos y límites en el admin con registro de auditoría, estética RefinIA, pantallas por rol.
 - Producción: https://dashboard-ptar-248156452075.us-east1.run.app (servicio `dashboard-ptar`). Se despliega a mano con `scripts/gcp/deploy.sh`, como Avante, nunca con cada push: la base vive en el contenedor y un despliegue mientras alguien captura pierde esos cambios.
 - Fase 1 (importación del histórico) implementada: mediciones con historial, catálogo inicial, mapeos e importación con informe. El histórico (unas 636.000 mediciones) está importado en la base local; falta revisar el informe y llevar la base a producción con `scripts/gcp/replace-db.sh` (decidido: la base local reemplaza la de producción).
+- Fase 2 (variables importantes y explorador) implementada. Los puntos de cada variable importante son datos (admin); la configuración inicial la crea la migración `dashboards/0002`. Solo hay un límite cargado (fenoles en BA-4010); los demás de §8 los carga el administrador.
 
 ## Stack
 - Igual que Avante (`../avante`), que es la referencia de cómo se hace todo:
   - Python 3.14, Django 6 y `uv` (`pyproject.toml` y `uv.lock`; no hay `requirements.txt`).
   - SQLite, también en producción, replicado con Litestream.
   - Plantillas de Django + HTMX servido desde `static/js/`, sin CDN. Sin SPA.
-- Gráficas con ECharts 5.6.0 servido localmente, la misma versión del dashboard U044.
+- Gráficas con ECharts 5.6.0 servido localmente (`static/js/echarts.min.js`), la misma versión del dashboard U044.
 - `openpyxl` para la importación del histórico y las exportaciones; `django-axes` para el bloqueo por intentos fallidos.
 - Estética RefinIA: los tokens y la barra superior de `../refinia-portal/static/css/styles.css`, IBM Plex Sans y tema claro. Si la barra cambia allá, cambia aquí.
 - Despliegue en Google Cloud:
@@ -92,7 +93,11 @@
 - `apps/catalog`: `Source`, `ProcessArea`, `SamplingPoint` y `PointAlias`, `Parameter` (rango físico), `Variable` (punto + parámetro + fuente, rango habitual), `Limit` (con vigencia; `Limit.objects.in_force(fecha)`), `CaptureForm` y `CaptureFormVariable`. Todo se gestiona en el admin.
 - `apps/core`: `AuditEntry` y `audit.py` (`AuditedAdmin`: registra antes → después de cada cambio hecho en el admin, también en los inlines), `PrivateCacheMiddleware` (`Cache-Control: private`), `HtmxRedirectMiddleware` y la redirección de inicio por rol.
 - `apps/capture`: página **Captura**; por ahora lista los formatos de la persona. Las rejillas llegan en la fase 3.
-- `apps/dashboards`: **Variables importantes** y **Explorador**; por ahora vacías. Se construyen en la fase 2.
+- `apps/dashboards`: **Variables importantes** y **Explorador** (§7).
+  - `ImportantVariable`: un parámetro y sus puntos (hasta 8, `MAX_POINTS`), en el admin.
+  - `stats.py`: muestras (sin dudosos), ventanas por días calendario, estadística descriptiva, límites con vigencia (`LimitBook`) y agregación.
+  - `charts.py`: los datos de cada gráfica (color = punto, forma = fuente, límites, horas de Bogotá); `static/js/charts.js` las dibuja.
+  - `panels.py` (tarjetas de variables importantes), `explorer.py` (formulario y series) y `export.py` (Excel del explorador).
 - `apps/measurements`: `Measurement` (formato largo; `time_precision`: hora exacta, a. m., p. m. o solo el día; `taken_at` es el inicio del periodo cuando no hay hora), `MeasurementHistory` (nunca se borra) y `values.py` (qué es un valor: `parse_value`, rangos). En el admin, solo lectura; las correcciones llegan con la captura (fase 3).
 - `apps/imports`: `ImportBatch` (con conteos e informe), `maps.py` (lee `import_maps/`), `catalog.py` (crea el catálogo inicial que falte), `workbook.py` (busca las tablas de Excel en el XML del libro y lee valores y fórmulas), `timeline.py` (redondeo y deducción de horas por la secuencia), `importer.py` y el comando `import_history`.
 - `import_maps/`: `catalog/*.csv` (fuentes, zonas, puntos con alias, parámetros con rango físico) y un mapeo por tabla de Excel (`Tabla1.csv`, `Laboratorio.csv`…), una fila por columna, buscada por su encabezado. Solo encabezados y códigos, nunca valores.

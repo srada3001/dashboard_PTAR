@@ -1,0 +1,42 @@
+{% comment %}
+A chart drawn by static/js/charts.js from the data in the <script> that follows it
+(apps/dashboards/charts.py). Color: the point; marker shape: the source. The buttons hide and
+show points and sources; the table next to the chart holds the same series as numbers.
+Context: chart, chart_id, title, zoom (optional).
+{% endcomment %}
+<figure class="grafica" data-chart="{{ chart_id }}"{% if zoom %} data-zoom{% endif %}>
+  <div class="grafica__controles">
+    <div class="leyenda" role="group" aria-label="Puntos">
+      {% for point in chart.points %}
+        <button type="button" class="ficha" data-point="{{ forloop.counter0 }}" aria-pressed="true"
+                {% if not point.hasData %}disabled title="Sin datos en el periodo"{% endif %}>
+          <span class="ficha__color" style="--color: {{ point.color }}"></span>{{ point.code }}
+        </button>
+      {% endfor %}
+    </div>
+    {% if chart.sources|length > 1 %}
+      <div class="leyenda" role="group" aria-label="Fuentes">
+        {% for source in chart.sources %}
+          <button type="button" class="ficha ficha--fuente" data-source="{{ forloop.counter0 }}" aria-pressed="true">
+            <span class="forma forma--{{ source.shape }}" aria-hidden="true"></span>{{ source.code }}
+          </button>
+        {% endfor %}
+      </div>
+    {% else %}
+      {% for source in chart.sources %}
+        <p class="leyenda__fuente"><span class="forma forma--{{ source.shape }}" aria-hidden="true"></span>{{ source.code }}</p>
+      {% endfor %}
+    {% endif %}
+    <button type="button" class="ficha ficha--escala" data-log aria-pressed="false">Escala logarítmica</button>
+  </div>
+  <div class="grafica__lienzo" data-canvas role="img" aria-label="Gráfica de {{ title }}{% if chart.unit %} en {{ chart.unit }}{% endif %}; los valores están en la tabla."></div>
+  <figcaption class="grafica__notas">
+    {% for limit in chart.limits %}
+      <span class="nota"><span class="nota__limite" style="--color: {{ limit.color }}"></span>{{ limit.text }}</span>
+    {% endfor %}
+    {% if chart.qualified %}<span class="nota"><span class="forma forma--circle forma--vacia" aria-hidden="true"></span>Marcador vacío: {% if chart.period %}incluye valores{% else %}valor{% endif %} con «&lt;» o «&gt;»</span>{% endif %}
+    {% if chart.period == "day" %}<span class="nota">Promedios diarios</span>{% elif chart.period == "week" %}<span class="nota">Promedios semanales</span>{% elif chart.period == "month" %}<span class="nota">Promedios mensuales</span>{% endif %}
+    <span class="nota" data-log-note hidden></span>
+  </figcaption>
+</figure>
+{{ chart|json_script:chart_id }}

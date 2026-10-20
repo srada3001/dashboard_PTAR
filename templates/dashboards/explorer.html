@@ -1,17 +1,111 @@
 {% extends "base.html" %}
+{% load dashboards %}
 {% block title %}Explorador{% endblock %}
+{% block scripts %}{% include "dashboards/_chart_scripts.html" %}{% endblock %}
 {% block content %}
 <header class="encabezado">
   <h2>Explorador</h2>
-  <p class="ayuda">Cualquier parámetro, en uno o varios puntos y fuentes, con estadística descriptiva.</p>
+  <p class="ayuda">Un parámetro en uno o varios puntos y fuentes, con estadística descriptiva de cada serie.</p>
 </header>
-<section class="tarjeta vacio">
-  {% if measurement_count %}
-  <p>El histórico está importado: {{ measurement_count }} mediciones.</p>
-  <p class="ayuda">El explorador se construye en la fase 2.</p>
-  {% else %}
-  <p>Todavía no hay mediciones.</p>
-  <p class="ayuda">El explorador se construye en la fase 2, después de importar el histórico.</p>
-  {% endif %}
-</section>
+
+<form class="tarjeta explorador" method="get">
+  <div class="explorador__fila">
+    {% for field in form %}{% if field.name != "points" and field.name != "sources" %}
+      <div class="campo{% if field.errors %} campo--error{% endif %}{% if field.name == "parameter" %} campo--ancho{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<p class="error">{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}{% endfor %}
+  </div>
+  <div id="opciones">{% include "dashboards/_explorer_options.html" %}</div>
+  <button type="submit" class="boton">Ver series</button>
+</form>
+
+{% if exploration %}
+  {% with parameter=exploration.parameter decimals=exploration.parameter.decimals %}
+  <section class="tarjeta panel" aria-labelledby="resultado">
+    <header class="panel__encabezado panel__encabezado--acciones">
+      <div>
+        <h3 id="resultado">{{ parameter.name }}</h3>
+        <p class="ayuda">
+          {% if parameter.code != parameter.name %}{{ parameter.code }} · {% endif %}{% if parameter.unit %}{{ parameter.unit }} · {% endif %}
+          del {{ exploration.first_day|date:"Y-m-d" }} al {{ exploration.last_day|date:"Y-m-d" }} ·
+          gráfica con {{ exploration.period_name }}{% if exploration.automatic %} (automático){% endif %}
+        </p>
+      </div>
+      <a class="boton boton--secundario" href="{% url 'explorer_export' %}?{{ query }}">Exportar a Excel</a>
+    </header>
+
+    {% if exploration.chart.series %}
+      {% include "dashboards/_chart.html" with chart=exploration.chart chart_id="grafica-explorador" title=parameter.name zoom=True %}
+    {% else %}
+      <p class="sin-datos">Sin datos en esas fechas.</p>
+    {% endif %}
+
+    <div class="tabla-desplazable">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col">Serie</th>
+            <th scope="col" class="num">Muestras</th>
+            <th scope="col" class="num">Promedio</th>
+            <th scope="col" class="num">Mediana</th>
+            <th scope="col" class="num">Mín.</th>
+            <th scope="col" class="num">Máx.</th>
+            <th scope="col" class="num"><abbr title="Desviación estándar muestral">Desv. est.</abbr></th>
+            <th scope="col" class="num">P10</th>
+            <th scope="col" class="num">P90</th>
+            <th scope="col" class="num">Fuera de límite</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for result in exploration.results %}
+            {% with d=result.description e=result.exceedance %}
+            <tr>
+              <th scope="row" class="serie">
+                <span class="forma forma--{{ result.shape }}" style="--color: {{ result.color }}" aria-hidden="true"></span>
+                {{ result.variable.point }} <span class="serie__fuente">{{ result.variable.source }}</span>
+                {% if result.suspect %}<span class="cuando">{{ result.suspect }} dudoso{{ result.suspect|pluralize }} sin revisar, excluido{{ result.suspect|pluralize }}</span>{% endif %}
+              </th>
+              {% if d.n %}
+                <td class="num">{{ d.n }}</td>
+                <td class="num">{{ d.mean|num:decimals }}</td>
+                <td class="num">{{ d.median|num:decimals }}</td>
+                <td class="num">{{ d.minimum|num:decimals }}</td>
+                <td class="num">{{ d.maximum|num:decimals }}</td>
+                <td class="num">{% if d.std is not None %}{{ d.std|num:decimals }}{% else %}—{% endif %}</td>
+                <td class="num">{{ d.p10|num:decimals }}</td>
+                <td class="num">{{ d.p90|num:decimals }}</td>
+                <td class="num">
+                  {% if not e.checked %}<span class="sin-datos">Sin límite</span>
+                  {% elif e.out %}<span class="alerta">▲ {{ e.percent|num:1 }} %</span> <span class="cuando">{{ e.out }} de {{ e.checked }}</span>
+                  {% else %}0 % <span class="cuando">0 de {{ e.checked }}</span>{% endif %}
+                </td>
+              {% else %}
+                <td class="num">0</td>
+                <td class="num sin-datos" colspan="7">Sin datos</td>
+                <td class="num"><span class="sin-datos">Sin datos</span></td>
+              {% endif %}
+            </tr>
+            {% endwith %}
+          {% empty %}
+            <tr><td colspan="10" class="sin-datos">Ninguno de esos puntos tiene ese parámetro con esas fuentes.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="ayuda panel__pie">
+      La estadística usa las mediciones sin agregar. Los valores con «&lt;» o «&gt;» cuentan como su número (el peor caso)
+      y los dudosos del histórico quedan fuera. Desviación estándar muestral; percentiles con interpolación, como PERCENTIL.INC de Excel.
+      «Fuera de límite» compara cada muestra con los límites vigentes en su fecha.
+    </p>
+  </section>
+  {% endwith %}
+{% elif not form.is_bound %}
+  <section class="tarjeta vacio">
+    <p>Elige un parámetro, los puntos y las fechas.</p>
+    <p class="ayuda">Por ejemplo, los fenoles en BA-4001, BA-4008 y BA-4010 para comparar la entrada, el biorreactor y la salida.</p>
+  </section>
+{% endif %}
 {% endblock %}

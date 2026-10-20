@@ -1,7 +1,7 @@
 # Dashboard PTAR — Requisitos y lineamientos
 
 > Documento vivo. Cuando una decisión cambie, se actualiza aquí primero.
-> Última actualización: 2026-10-18. Hay decisiones abiertas (§15); lo que dependa de ellas está marcado como **pendiente**.
+> Última actualización: 2026-10-19. Hay decisiones abiertas (§15); lo que dependa de ellas está marcado como **pendiente**.
 
 ## 1. Contexto y objetivo
 
@@ -195,6 +195,11 @@ Gráficas con ECharts, como el dashboard U044.
 - **Fenoles:** **BA-4001 (01, entrada), BA-4008 (08, biorreactor) y BA-4010 (10, salida) en la misma gráfica**, cada punto con su color. Solo esos tres puntos. Como la entrada ronda 1–4 mg/L y la salida 0,1 mg/L, el eje se puede cambiar a escala logarítmica para que la salida y su límite de 0,2 mg/L se lean.
 - **Fuentes:** si la variable se mide con varias fuentes, se muestran todas. El color distingue el punto y la forma del marcador distingue la fuente. La fuente oficial para el cumplimiento se escogerá después.
 - Los datos que no hay dejan un hueco en la gráfica. Los dudosos del histórico (§9) no se grafican ni entran en la estadística hasta que alguien los revise.
+- **Puntos de cada variable:** se configuran en la administración (Vistas → Variables importantes), **hasta 8 por gráfica**, uno por color: con más colores las series ya no se distinguen. Se muestran todas las fuentes que miden el parámetro en esos puntos; para comparar otros puntos está el explorador. Configuración inicial (propuesta, se ajusta en la administración): fenoles en BA-4001, BA-4008 y BA-4010; temperatura, pH, SST y G&A en BA-4001, BA-4005C, BA-4005D, DNF entrada, CL-4080 salida, BA-4008, BA-4009A y BA-4010.
+- **Ventanas:** días calendario de Bogotá que terminan en la fecha «Hasta» (hoy, por defecto; se puede elegir otra para consultar el pasado). Los últimos 7 días al 19 de octubre son del 13 al 19, sin importar la hora, así que una muestra con solo el día cuenta en su día. La gráfica muestra 7, 30, 90 o 365 días; desde 90, con promedios diarios.
+- **Fuera de límite, 7 días:** cuántas muestras de los últimos 7 días rompen el límite vigente en su fecha, de las que tienen límite. Sin muestras es «sin datos»; sin límite definido, «sin límite». Además, el último valor se marca si está fuera del límite.
+- **Huecos:** la línea se corta cuando una serie pasa más de tres veces su intervalo habitual sin datos (y al menos un día), o cuando falta un día, una semana o un mes de promedios.
+- Todas las gráficas se pueden ver en escala logarítmica (también sirve en SST y G&A, que van de decenas a miles de mg/L) y se pueden ocultar puntos y fuentes.
 
 **Dónde se mide hoy cada una:**
 
@@ -208,9 +213,15 @@ Gráficas con ECharts, como el dashboard U044.
 
 ### 7.2 Explorador de series
 - Elegir un parámetro y uno o varios puntos y fuentes; superponer las series; rango de fechas.
+  - Hasta 8 puntos, por la misma razón que en §7.1. Si no se marca ninguna fuente, se toman todas.
+  - Por defecto, los últimos 90 días.
 - Estadística descriptiva por serie: número de muestras, promedio, mediana, mínimo, máximo, desviación estándar, percentiles 10 y 90 y % de muestras por encima del límite.
+  - Siempre con las mediciones sin agregar. Desviación estándar muestral (DESVEST.M de Excel) y percentiles con interpolación (PERCENTIL.INC).
+  - **% fuera de límite:** de las muestras que tienen un límite vigente en su fecha, cuántas lo rompen, sea cual sea el tipo de límite del punto. Un rango (pH) se rompe por los dos lados.
+  - Los dudosos no entran; la tabla dice cuántos se dejaron fuera en cada serie.
 - Agregación diaria, semanal o mensual para las series largas.
-- Exportar a Excel lo que se está viendo.
+  - Solo cambia lo que dibuja la gráfica. Automática: sin agregar hasta 3 meses, promedios diarios hasta 3 años y semanales para más; se puede elegir otra.
+- Exportar a Excel lo que se está viendo: hoja «Estadística», hoja «Mediciones» (formato largo: fecha, hora, punto, parámetro, fuente, calificador, valor, unidad y quién la registró) y, si la gráfica es de promedios, una hoja con ellos. Sin los dudosos.
 
 ## 8. Límites y cumplimiento
 
