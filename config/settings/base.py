@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "apps.imports",
     "apps.capture",
     "apps.dashboards",
+    "apps.exports",
 ]
 
 MIDDLEWARE = [
@@ -45,6 +46,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.accounts.middleware.ForcePasswordChangeMiddleware",
+    # Starts each Monday's export after the first request that finds it due (apps/exports/weekly.py).
+    "apps.exports.middleware.WeeklyExportMiddleware",
     # Must be last, per django-axes docs.
     "axes.middleware.AxesMiddleware",
 ]
@@ -116,6 +119,13 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Exports (docs/REQUISITOS.md §10): files go to the exports/ folder of this bucket when it is set
+# (production), else to the exports/ folder of the repository. Each Monday's file is prepared by
+# itself unless WEEKLY_EXPORT_AUTO is off.
+EXPORTS_BUCKET = ""
+EXPORTS_DIR = BASE_DIR / "exports"
+WEEKLY_EXPORT_AUTO = True
 
 
 def sqlite_database(path):

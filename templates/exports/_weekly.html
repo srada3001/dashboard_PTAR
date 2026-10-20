@@ -1,0 +1,35 @@
+{% load exports %}{% comment %}The weekly files. While one is being prepared, HTMX asks for this list again every few seconds.{% endcomment %}
+<div id="semanales"{% if preparing %} hx-get="{% url 'exports_weekly' %}" hx-trigger="every 5s" hx-swap="outerHTML"{% endif %}>
+  {% if weeks %}
+    <div class="tabla-desplazable">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col">Datos hasta</th>
+            <th scope="col">Estado</th>
+            <th scope="col" class="num">Mediciones</th>
+            <th scope="col" class="num">Tamaño</th>
+            <th scope="col"><span class="sr-only">Descarga</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for week in weeks %}
+            <tr>
+              <th scope="row">Domingo {{ week.last_day|date:"Y-m-d" }}</th>
+              <td>
+                {% if week.status == "done" %}Listo <span class="cuando">{{ week.finished_at|date:"Y-m-d H:i" }}</span>
+                {% elif week.status == "running" %}<span class="preparando">Preparándose…</span> <span class="cuando">tarda unos minutos</span>
+                {% else %}<span class="alerta">Falló</span> <span class="cuando">se intenta de nuevo en una hora</span>{% endif %}
+              </td>
+              <td class="num">{% if week.measurements is not None %}{{ week.measurements|thousands }}{% endif %}</td>
+              <td class="num">{% if week.size %}{{ week.size|filesizeformat }}{% endif %}</td>
+              <td>{% if week.status == "done" %}<a class="boton boton--secundario" href="{% url 'exports_weekly_download' week.pk %}">Descargar</a>{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="sin-datos">Todavía no hay archivos semanales. El primero se prepara solo en cuanto la app se usa esta semana.</p>
+  {% endif %}
+</div>

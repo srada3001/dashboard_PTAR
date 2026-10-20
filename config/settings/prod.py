@@ -16,6 +16,9 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 # (see docker/start.sh). Requires a single Cloud Run instance.
 DATABASES = {"default": sqlite_database(env("DATABASE_PATH", default="/data/db.sqlite3"))}
 
+# The weekly and other exports are kept in the same private bucket as the replica, under exports/.
+EXPORTS_BUCKET = env("LITESTREAM_BUCKET", default="")
+
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},

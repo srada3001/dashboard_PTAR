@@ -3,12 +3,15 @@ from urllib.parse import urlencode
 
 from django import forms
 from django.db.models import Max
+from django.contrib import messages
 from django.http import FileResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.permissions import reader_required
+from apps.exports.templatetags.exports import thousands
+from apps.exports.views import MAX_AT_ONCE
 from apps.measurements.models import Measurement
 
 from . import export
@@ -83,6 +86,13 @@ def explorer_export(request):
     """What the explorer shows, as an Excel workbook."""
     form = ExplorerForm(request.GET or None)
     if not (form.is_bound and form.is_valid()):
+        return redirect(f"{reverse('explorer')}?{request.GET.urlencode()}")
+    total = export.measurement_count(form.cleaned_data)
+    if total > MAX_AT_ONCE:
+        messages.error(request, (
+            f"Son {thousands(total)} mediciones; al momento se descargan hasta {thousands(MAX_AT_ONCE)}. "
+            "Acorta las fechas o usa el archivo semanal de Exportaciones, que tiene todos los datos."
+        ))
         return redirect(f"{reverse('explorer')}?{request.GET.urlencode()}")
     exploration = explore(form.cleaned_data)
     return FileResponse(export.workbook(exploration), as_attachment=True, filename=export.filename(exploration))

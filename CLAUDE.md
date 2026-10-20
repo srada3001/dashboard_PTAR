@@ -8,7 +8,8 @@
 - Fase 0 hecha y desplegada: proyecto base, usuarios con roles y ámbitos, login con bloqueo, catálogos y límites en el admin con registro de auditoría, estética RefinIA, pantallas por rol.
 - Producción: https://dashboard-ptar-248156452075.us-east1.run.app (servicio `dashboard-ptar`). Se despliega a mano con `scripts/gcp/deploy.sh`, como Avante, nunca con cada push: la base vive en el contenedor y un despliegue mientras alguien captura pierde esos cambios.
 - Fase 1 (importación del histórico) implementada: mediciones con historial, catálogo inicial, mapeos e importación con informe. El histórico (unas 636.000 mediciones) está importado en la base local; falta revisar el informe y llevar la base a producción con `scripts/gcp/replace-db.sh` (decidido: la base local reemplaza la de producción).
-- Fase 2 (variables importantes y explorador) implementada. Los puntos de cada variable importante son datos (admin); la configuración inicial la crea la migración `dashboards/0002`. Solo hay un límite cargado (fenoles en BA-4010); los demás de §8 los carga el administrador.
+- Fase 2 (variables importantes y explorador) implementada y desplegada. Los puntos de cada variable importante son datos (admin); la configuración inicial la crea la migración `dashboards/0002`. Solo hay un límite cargado (fenoles en BA-4010); los demás de §8 los carga el administrador.
+- Fase 3 (captura, historial y exportaciones) implementada; las decisiones del 2026-10-20 están en §15. Los formatos iniciales los crea la migración `catalog/0004` desde `import_maps/` (solo variables con datos desde octubre de 2025).
 
 ## Stack
 - Igual que Avante (`../avante`), que es la referencia de cómo se hace todo:
@@ -77,6 +78,7 @@
 - Servidor local (SQLite, `config.settings.dev`): `uv run python manage.py runserver 8010` (el 8000 lo usa Avante)
 - Importar el histórico (idempotente; `--dry-run` simula): `uv run python manage.py import_history --user <admin> C:/Users/srada/Desktop/referencia_ptar/tabla_referencia_1.xlsx C:/Users/srada/Desktop/referencia_ptar/tabla_referencia_2.xlsx` (unos 2 minutos). El informe queda en Administración → Lotes de importación.
 - Pruebas: `uv run python -m pytest`
+- Preparar ya el archivo semanal (local): `uv run python manage.py weekly_export`
 - Revisión de producción: `DJANGO_SETTINGS_MODULE=config.settings.prod uv run python manage.py check --deploy` (requiere `SECRET_KEY` y `ALLOWED_HOSTS`)
 - Migraciones: `uv run python manage.py makemigrations` / `uv run python manage.py migrate`
 - Crear administrador (local): `uv run python manage.py createsuperuser`
@@ -92,14 +94,17 @@
 - `apps/accounts`: `User` (modelo de usuario, con `role` y `capture_forms`), `permissions.py` (`reader_required`, `capture_required`), bloqueo por intentos fallidos (`lockout.py`), cambio de contraseña obligatorio (middleware) y `create_initial_admin`.
 - `apps/catalog`: `Source`, `ProcessArea`, `SamplingPoint` y `PointAlias`, `Parameter` (rango físico), `Variable` (punto + parámetro + fuente, rango habitual), `Limit` (con vigencia; `Limit.objects.in_force(fecha)`), `CaptureForm` y `CaptureFormVariable`. Todo se gestiona en el admin.
 - `apps/core`: `AuditEntry` y `audit.py` (`AuditedAdmin`: registra antes → después de cada cambio hecho en el admin, también en los inlines), `PrivateCacheMiddleware` (`Cache-Control: private`), `HtmxRedirectMiddleware` y la redirección de inicio por rol.
-- `apps/capture`: página **Captura**; por ahora lista los formatos de la persona. Las rejillas llegan en la fase 3.
+- `apps/capture`: página **Captura** (§6).
+  - `grid.py`: las celdas de cada variable según su frecuencia (`slots_of`), quién puede cambiar un valor (`may_change`: el capturista, solo lo suyo de las últimas 24 horas) y la rejilla de un formato para un día (`build`).
+  - `views.py`: la rejilla, guardar una celda (`save_cell`, responde JSON: guardado, inválido, pide confirmar, conflicto…) y su historial. `static/js/capture.js` maneja el teclado, las confirmaciones con motivo y la barra de la celda.
 - `apps/dashboards`: **Variables importantes** y **Explorador** (§7).
   - `ImportantVariable`: un parámetro y sus puntos (hasta 8, `MAX_POINTS`), en el admin.
   - `stats.py`: muestras (sin dudosos), ventanas por días calendario, estadística descriptiva, límites con vigencia (`LimitBook`) y agregación.
   - `charts.py`: los datos de cada gráfica (color = punto, forma = fuente, límites, horas de Bogotá); `static/js/charts.js` las dibuja.
   - `panels.py` (tarjetas de variables importantes), `explorer.py` (formulario y series) y `export.py` (Excel del explorador).
-- `apps/measurements`: `Measurement` (formato largo; `time_precision`: hora exacta, a. m., p. m. o solo el día; `taken_at` es el inicio del periodo cuando no hay hora), `MeasurementHistory` (nunca se borra) y `values.py` (qué es un valor: `parse_value`, rangos). En el admin, solo lectura; las correcciones llegan con la captura (fase 3).
+- `apps/measurements`: `Measurement` (formato largo; `time_precision`: hora exacta, a. m., p. m. o solo el día; `taken_at` es el inicio del periodo cuando no hay hora), `MeasurementHistory` (nunca se borra), `values.py` (qué es un valor: `parse_value`, rangos) y `records.py` (crear, corregir y borrar con historial; `version` detecta cambios de otra persona). En el admin, solo lectura: se corrige desde la captura.
 - `apps/imports`: `ImportBatch` (con conteos e informe), `maps.py` (lee `import_maps/`), `catalog.py` (crea el catálogo inicial que falte), `workbook.py` (busca las tablas de Excel en el XML del libro y lee valores y fórmulas), `timeline.py` (redondeo y deducción de horas por la secuencia), `importer.py` y el comando `import_history`.
+- `apps/exports`: página **Exportaciones** (§10): a demanda (larga o ancha por fuente, hasta 100.000 mediciones) y el archivo semanal (`WeeklyExport`, `weekly.py`), que `WeeklyExportMiddleware` dispara en segundo plano con la primera visita después del lunes. `workbook.py` escribe los Excel; `storage.py` los guarda en el bucket (`EXPORTS_BUCKET`) o en `exports/` en local.
 - `import_maps/`: `catalog/*.csv` (fuentes, zonas, puntos con alias, parámetros con rango físico) y un mapeo por tabla de Excel (`Tabla1.csv`, `Laboratorio.csv`…), una fila por columna, buscada por su encabezado. Solo encabezados y códigos, nunca valores.
 - `templates/`: `base.html` lleva la barra de RefinIA y el menú según el rol. `static/css/app.css` lleva los tokens y la barra copiados de `refinia-portal`.
 - `docker/` (`start.sh`, `litestream.yml`, `fetch_seed.py`), `Dockerfile`, `scripts/gcp/` y `docs/DESPLIEGUE.md`: despliegue en Cloud Run. La carpeta de la réplica en el bucket es `LITESTREAM_PATH` (por defecto `db`); `replace-db.sh` empieza una nueva.

@@ -1,0 +1,33 @@
+{% load dashboards %}
+<header class="historial__encabezado">
+  <h3>Historial</h3>
+  <p class="ayuda">{{ variable }} · {{ taken_at|date:"Y-m-d" }} {{ slot.label }}</p>
+</header>
+{% if entries %}
+  <div class="tabla-desplazable">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col">Cuándo</th>
+          <th scope="col">Quién</th>
+          <th scope="col">Qué</th>
+          <th scope="col">Cambio</th>
+          <th scope="col">Motivo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in entries %}
+          <tr>
+            <td class="num">{{ entry.timestamp|date:"Y-m-d H:i" }}</td>
+            <td>{{ entry.user.display_name }}</td>
+            <td>{{ entry.get_action_display }}{% if entry.batch %} <span class="cuando">importación del histórico</span>{% endif %}{% if entry.new_suspect %} <span class="alerta">dudoso</span>{% endif %}</td>
+            <td class="num">{{ entry.change }}</td>
+            <td>{{ entry.reason|default:"—" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p class="sin-datos">Esta celda no tiene historial.</p>
+{% endif %}

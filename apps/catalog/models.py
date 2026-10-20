@@ -11,10 +11,12 @@ from django.db.models.functions import Lower
 
 
 class Schedule(models.TextChoices):
-    """How often a variable is sampled, and the shape of a capture form."""
+    """How often a variable is sampled, and the shape of a capture form. A variable's frequency
+    gives its cells in the capture: one per hour, 07:00 and 16:00, a. m. and p. m., or one per day."""
 
     HOURLY = "hourly", "Cada hora"
     TWICE_DAILY = "twice_daily", "7 a. m. y 4 p. m."
+    AM_PM = "am_pm", "a. m. y p. m."
     DAILY = "daily", "Diaria"
     OCCASIONAL = "occasional", "Eventual"
 

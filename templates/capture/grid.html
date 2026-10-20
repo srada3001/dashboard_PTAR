@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ form.name }} · Captura{% endblock %}
+{% block scripts %}<script src="{% static 'js/capture.js' %}" defer></script>{% endblock %}
+{% block content %}
+<header class="encabezado encabezado--captura">
+  <div>
+    <p class="formato__fuente">{{ form.source.code }} · {{ form.get_schedule_display }}</p>
+    <h2>{{ form.name }}</h2>
+    <p class="ayuda">Cada celda se guarda sola al salir de ella. Enter baja, Tab avanza, Escape deshace. Una celda vacía es un dato que no hay.</p>
+  </div>
+  <form class="filtros filtros--fecha" method="get" data-autosubmit>
+    <a class="boton boton--secundario" href="?date={{ previous_day|date:'Y-m-d' }}" aria-label="Día anterior">←</a>
+    <div class="campo">
+      <label for="fecha">Fecha</label>
+      <input id="fecha" type="date" name="date" value="{{ grid.day|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}" required>
+    </div>
+    {% if next_day %}<a class="boton boton--secundario" href="?date={{ next_day|date:'Y-m-d' }}" aria-label="Día siguiente">→</a>{% endif %}
+    {% if grid.day != today %}<a class="enlace-hoy" href="?">Hoy</a>{% endif %}
+    <noscript><button type="submit" class="boton boton--secundario">Ver</button></noscript>
+  </form>
+</header>
+
+{% if not grid.variables %}
+  <section class="tarjeta vacio">
+    <p>Este formato todavía no tiene variables.</p>
+    <p class="ayuda">El administrador las agrega en Administración → Formatos de captura.</p>
+  </section>
+{% else %}
+<div class="rejilla-caja">
+  <table class="rejilla{% if grid.slots_as_rows %} rejilla--horas{% endif %}"
+         data-save-url="{% url 'capture_save_cell' form.pk %}"
+         data-history-url="{% url 'capture_cell_history' form.pk %}"
+         data-date="{{ grid.day|date:'Y-m-d' }}"
+         data-day-label="{{ grid.day|date:'Y-m-d' }}"{% if grid.day == today %} data-today{% endif %}>
+    {% if grid.slots_as_rows %}
+      <thead>
+        <tr>
+          <th class="rejilla__esquina" rowspan="2" scope="col">Hora</th>
+          {% for point, span in grid.point_groups %}<th class="rejilla__punto" colspan="{{ span }}" scope="colgroup">{{ point }}</th>{% endfor %}
+        </tr>
+        <tr>
+          {% for variable in grid.variables %}<th class="rejilla__parametro" scope="col">{{ variable.parameter.code }}{% if variable.parameter.unit %}<span>{{ variable.parameter.unit }}</span>{% endif %}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for slot, cells in grid.slot_rows %}
+          <tr>
+            <th class="rejilla__franja" scope="row">{{ slot.label }}</th>
+            {% for cell in cells %}{% include "capture/_cell.html" %}{% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    {% else %}
+      <thead>
+        <tr>
+          <th class="rejilla__esquina" scope="col">Punto</th>
+          <th class="rejilla__esquina" scope="col">Parámetro</th>
+          {% for slot in grid.slots %}<th class="rejilla__franja-col" scope="col">{{ slot.label }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for variable, span, cells in grid.variable_rows %}
+          <tr{% if span %} class="rejilla__inicio-punto"{% endif %}>
+            {% if span %}<th class="rejilla__punto-fila" rowspan="{{ span }}" scope="rowgroup">{{ variable.point }}</th>{% endif %}
+            <th class="rejilla__parametro-fila" scope="row">{{ variable.parameter.code }}{% if variable.parameter.unit %} <span>{{ variable.parameter.unit }}</span>{% endif %}</th>
+            {% for cell in cells %}{% include "capture/_cell.html" %}{% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    {% endif %}
+  </table>
+</div>
+
+<aside class="barra-celda" aria-live="polite" data-status>
+  <div class="barra-celda__texto">
+    <strong data-status-cell>Elige una celda.</strong>
+    <span data-status-detail></span>
+  </div>
+  <button type="button" class="boton boton--secundario" data-history hidden>Historial</button>
+</aside>
+<section class="tarjeta historial" data-history-panel hidden aria-label="Historial de la celda"></section>
+
+<div class="aviso-celda" role="dialog" aria-modal="false" data-prompt hidden>
+  <p data-prompt-text></p>
+  <label class="campo" data-prompt-reason hidden>
+    <span>Motivo (opcional)</span>
+    <input type="text" maxlength="300" autocomplete="off">
+  </label>
+  <div class="aviso-celda__botones">
+    <button type="button" class="boton" data-prompt-yes>Guardar</button>
+    <button type="button" class="boton boton--secundario" data-prompt-no>Cancelar</button>
+  </div>
+</div>
+{{ variables|json_script:"variables" }}
+{% endif %}
+{% endblock %}

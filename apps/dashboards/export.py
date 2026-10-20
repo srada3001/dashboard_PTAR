@@ -14,6 +14,7 @@ from openpyxl import Workbook
 from openpyxl.cell import WriteOnlyCell
 from openpyxl.styles import Font
 
+from apps.catalog.models import Variable
 from apps.measurements.models import Measurement, TimePrecision
 
 from .stats import aggregate, day_span
@@ -92,6 +93,13 @@ def means_sheet(book, exploration):
     for variable in exploration.variables:
         for bucket in aggregate(exploration.samples.get(variable.pk, []), exploration.period):
             sheet.append([f"{variable.point} · {variable.source}", date_cell(sheet, bucket.start), bucket.mean, bucket.n, bucket.qualified])
+
+
+def measurement_count(data):
+    """How many measurements an export of the explorer's form would hold."""
+    start, end = day_span(data["start"], data["end"])
+    variables = Variable.objects.filter(parameter=data["parameter"], point__in=data["points"], source__in=data["sources"])
+    return Measurement.objects.filter(variable__in=variables, suspect=False, taken_at__gte=start, taken_at__lt=end).count()
 
 
 def workbook(exploration):

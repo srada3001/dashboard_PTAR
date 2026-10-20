@@ -3,19 +3,21 @@
 {% block content %}
 <header class="encabezado">
   <h2>Captura</h2>
-  <p class="ayuda">Los formatos que puedes llenar. La captura de datos se habilita en la fase 3.</p>
+  <p class="ayuda">Los formatos que puedes llenar. Elige uno para ver y llenar sus celdas.</p>
 </header>
 
 {% if capture_forms %}
   <ul class="formatos">
     {% for capture_form in capture_forms %}
-      <li class="tarjeta formato">
-        <span class="formato__fuente">{{ capture_form.source.code }}</span>
-        <h3 class="formato__nombre">{{ capture_form.name }}</h3>
-        <p class="formato__detalle">
-          {{ capture_form.get_schedule_display }} ·
-          {% with total=capture_form.items.all|length %}{{ total }} variable{{ total|pluralize:"s" }}{% endwith %}
-        </p>
+      <li>
+        <a class="tarjeta formato" href="{% url 'capture_grid' capture_form.pk %}">
+          <span class="formato__fuente">{{ capture_form.source.code }}</span>
+          <h3 class="formato__nombre">{{ capture_form.name }}</h3>
+          <p class="formato__detalle">
+            {{ capture_form.get_schedule_display }} ·
+            {% with total=capture_form.items.all|length %}{{ total }} variable{{ total|pluralize:"s" }}{% endwith %}
+          </p>
+        </a>
       </li>
     {% endfor %}
   </ul>

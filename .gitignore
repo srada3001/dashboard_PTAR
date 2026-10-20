@@ -28,7 +28,7 @@ Thumbs.db
 *.csv
 !**/import_maps/*.csv
 ~$*
-exports/
+/exports/
 
 # Local Claude Code settings
 .claude/settings.local.json

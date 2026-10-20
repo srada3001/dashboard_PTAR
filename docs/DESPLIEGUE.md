@@ -122,6 +122,16 @@ gcloud run services update dashboard-ptar --region us-east1 --update-env-vars LI
 - `deploy.sh` conserva `LITESTREAM_PATH` (usa `--update-env-vars`), así que los despliegues siguientes siguen con la base nueva.
 - La base con el histórico pesa unos 230 MB y vive en la memoria del contenedor (1 GiB). Si los logs muestran que se queda sin memoria al arrancar, sube `--memory` a `2Gi` en `deploy.sh` y vuelve a desplegar.
 
+## 8. Exportación semanal
+
+Cada lunes, la página **Exportaciones** ofrece un Excel con todos los datos hasta el domingo (REQUISITOS.md §10). Una persona lo descarga y lo sube a SharePoint.
+
+- No hay tareas programadas: la app lo prepara sola, en segundo plano, con la primera visita después del lunes a las 00:00. Tarda unos minutos; mientras tanto la página dice «Preparándose…».
+- El archivo se guarda en `gs://<bucket>/exports/` (la cuenta de servicio del servicio ya puede escribir allí) y no se borra.
+- Si falla, la página dice «Falló» y se intenta otra vez una hora después. El motivo está en Administración → Exportaciones semanales y en los logs.
+- Prepararlo usa unos 100 MB más de memoria durante esos minutos. Si los logs muestran que el contenedor se queda sin memoria, sube `--memory` a `2Gi` en `deploy.sh`.
+- En local, los archivos quedan en la carpeta `exports/` del repositorio (ignorada por git). `uv run python manage.py weekly_export` prepara el de esta semana sin esperar.
+
 ## Problemas comunes
 
 **Logs de la app** (incluye la restauración de la base y las migraciones):

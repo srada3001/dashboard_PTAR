@@ -188,7 +188,7 @@ class TestDailyTables:
         assert frequencies == {
             "BA-4010 · N total · BIOTA": "daily",
             "BA-4010 · Fenoles · BIOTA": "twice_daily",
-            "SE-3010 · Fenoles · Por confirmar": "twice_daily",
+            "SE-3010 · Fenoles · Por confirmar": "am_pm",
         }
 
 

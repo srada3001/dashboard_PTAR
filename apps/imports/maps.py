@@ -32,7 +32,7 @@ PERIODS = {"am": TimePrecision.AM, "pm": TimePrecision.PM, "day": TimePrecision.
 TIMES = ("row", *FIXED_HOURS, *PERIODS)
 DEFAULT_FREQUENCY = {
     "row": Schedule.HOURLY, "07:00": Schedule.TWICE_DAILY, "16:00": Schedule.TWICE_DAILY,
-    "am": Schedule.TWICE_DAILY, "pm": Schedule.TWICE_DAILY, "day": Schedule.DAILY,
+    "am": Schedule.AM_PM, "pm": Schedule.AM_PM, "day": Schedule.DAILY,
 }
 
 

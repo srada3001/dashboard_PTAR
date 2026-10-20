@@ -1,7 +1,7 @@
 # Dashboard PTAR — Requisitos y lineamientos
 
 > Documento vivo. Cuando una decisión cambie, se actualiza aquí primero.
-> Última actualización: 2026-10-19. Hay decisiones abiertas (§15); lo que dependa de ellas está marcado como **pendiente**.
+> Última actualización: 2026-10-20. Hay decisiones abiertas (§15); lo que dependa de ellas está marcado como **pendiente**.
 
 ## 1. Contexto y objetivo
 
@@ -105,9 +105,13 @@ La hoja de límites de la tabla 1 (§16), «Datos Calidad Fase 1» y «Programa 
 
 - **Ámbito de captura:** los formatos de captura (§6) que un usuario puede llenar. Los asigna el administrador.
 - **Una persona nueva es capturista** hasta que el administrador le asigne otro rol: por defecto, el rol con menos permisos.
-- **El capturista no tiene acceso de lectura:** no ve vistas, gráficas, exportaciones ni datos de otros ámbitos. Al entrar va directo a Captura. Pendiente (§15): si ve lo ya registrado en su formato y si puede corregir sus capturas recientes.
+- **El capturista no tiene acceso de lectura:** no ve vistas, gráficas, exportaciones ni datos de otros ámbitos. Al entrar va directo a Captura.
+  - En sus formatos sí ve lo ya registrado para la fecha que elige, para no duplicar ni pisar datos.
+  - Puede corregir o borrar **sus propias capturas de las últimas 24 horas**, solo en su ámbito. Lo demás lo ve, pero no lo cambia.
+- **Corrigen:** el ingeniero, cualquier dato de sus formatos; el administrador, cualquier dato. Siempre con historial.
 - **Quién captura:**
   - Al inicio, mientras todos se acostumbran a la herramienta, solo los **4 tableristas** ingresan datos, de todas las fuentes, como hoy: tienen asignados todos los formatos.
+  - Los tableristas **tienen lectura**: su rol es Ingeniero, con todos los formatos.
   - Lo ideal es que después cada laboratorio ingrese los suyos, con sus propios usuarios de capturista. Se decidirá en el camino, porque requiere ponerse de acuerdo entre varios equipos. El modelo sirve igual para las dos formas.
 - Cuando se adopte, la usarán **unas 10 a 20 personas**.
 - Los permisos se verifican **en el servidor**, en cada vista.
@@ -126,7 +130,7 @@ Nombres de ejemplo en inglés para el código; la interfaz va en español.
 - **Parameter** (Parámetro): `code`, `name`, `unit`, `decimals`, `is_active` y el **rango físico opcional** (`physical_min`, `physical_max`). Si está definido, lo que queda fuera de él es imposible y se rechaza; por ejemplo, un pH fuera de 0 a 14.
 - **Variable**: punto + parámetro + fuente, única. Es lo que se captura, se importa y se grafica. Además tiene:
   - el **rango habitual opcional** (`typical_min`, `typical_max`): si está definido, fuera de él se pide confirmar. Si el parámetro tiene rango físico, el habitual debe quedar dentro de él;
-  - la `time_resolution` (cada hora, 7 a. m. y 4 p. m., diaria o eventual);
+  - la `time_resolution` (cada hora, 7 a. m. y 4 p. m., a. m. y p. m., diaria o eventual): define las celdas que tiene en la captura;
 - **Measurement** (Medición):
   - `variable` y `taken_at` (fecha y hora de la muestra, hora de Bogotá).
   - `time_precision` (precisión de la hora): hora exacta, a. m., p. m. o solo el día. **No se inventan horas:** si la fuente solo da el día (Labviewer), se guarda el día; si solo dice "a. m." o "p. m." («A.AGRIAS SEP.»), se guarda eso. En esos casos `taken_at` es el inicio del periodo (00:00 para el día y la mañana, 12:00 para la tarde) y la interfaz muestra la fecha con "a. m.", "p. m." o sin hora.
@@ -153,21 +157,26 @@ Nombres de ejemplo en inglés para el código; la interfaz va en español.
 
 | Formato | Fuente | Forma | Hoy |
 |---|---|---|---|
-| Nalco | Nalco | Rejilla por hora: filas = horas del turno, columnas = punto × parámetro | «Entrada de Datos» |
-| BIOTA Fase I | BIOTA | Por punto, muestras de 7 a. m. y 4 p. m. | «FASE I» y «BR 4081» |
+| Nalco | Nalco | Rejilla por hora: filas = las 24 horas del día elegido, columnas = punto × parámetro | «Entrada de Datos» |
+| Flujos de PI | PI | Igual que Nalco: los flujos de BA-4005C/D | «Entrada de Datos» |
+| BIOTA Fase I | BIOTA | Por punto, muestras de 7 a. m. y 4 p. m., y las diarias | «FASE I» y «BR 4081» |
 | Laboratorio central | Labviewer | Diario, por punto | «Datos LABORATORIO» |
+| Flujos y niveles del laboratorio | Por confirmar | Diario | «Datos LABORATORIO» |
 | Separadores y agua agria | Por confirmar | Diario, a. m. y p. m. | «A.AGRIAS SEP.» |
 | Sodas gastadas | Por confirmar | Eventual | «K-SODAS» |
 | DIAPAC | Por confirmar | Domingo (afluente y cámaras) y martes (cámaras) | «DIAPAC» |
 | Ecodiesel | Por confirmar | Eventual | «ECODIESEL» |
 
-Los flujos de BA4005C/D se capturan a mano en el formato de Nalco hasta que se lean desde PI.
+- Los flujos de BA4005C/D se capturan a mano en el formato «Flujos de PI» hasta que se lean desde PI. Es un formato aparte porque un formato reúne variables de una sola fuente, y la de los flujos es PI.
+- Los formatos iniciales los crea la app con las variables de cada hoja **que tienen datos desde octubre de 2025** (decidido el 2026-10-20). Las demás siguen en la base y en las vistas; el administrador las agrega a un formato si vuelven a medirse.
+- Las celdas de cada variable salen de su frecuencia: cada hora (24 celdas), 7 a. m. y 4 p. m., a. m. y p. m., o una por día (diaria y eventual). Un formato con muchas horas se muestra con las horas en filas; los demás, con las variables en filas.
 
 **Flujo:** el usuario elige un formato (solo ve los de su ámbito), la fecha y, si aplica, la hora; la app muestra las celdas de ese formato.
 - **Cada celda se guarda sola al salir de ella** y muestra que quedó guardada. Si no pasa la validación, el error se muestra en la celda y no se guarda.
 - Una celda vacía es un dato que no hay: no se guarda nada. Si el reporte dice ND, FS, SB o algo parecido, la celda se deja vacía.
 - Si el laboratorio reporta "ND" en el sentido de "no detectado" y da el límite de detección, se escribe "<" con ese límite (por ejemplo, "<0,1"). Si no da el límite, la celda se deja vacía.
-- Se llena con el teclado como en Excel: Tab y Enter para avanzar.
+- Se llena con el teclado como en Excel: Tab y Enter para avanzar (Enter baja, Mayúsculas + Enter sube y Escape deshace lo escrito en la celda).
+- La celda con el foco muestra abajo la variable, sus rangos, quién la registró y cuándo, y su historial.
 
 **Validación en cada celda** (en el navegador para avisar al momento y en el servidor, que es el que decide):
 - Solo números, opcionalmente con "<" o ">" delante. Valen la coma y el punto decimal ("7,4", "7.4", "<0,1", "> 500"); "7,,4", "7/4", "19+", "ND" o "asdfdf" no.
@@ -178,6 +187,9 @@ Los flujos de BA4005C/D se capturan a mano en el formato de Nalco hasta que se l
 - No hay fórmulas en la captura: los cálculos los hace la app.
 
 **Correcciones:** corregir o borrar un valor deja en el historial el valor anterior, quién lo cambió, cuándo y, si lo escribe, el motivo.
+- Cambiar o vaciar una celda que ya tenía valor pide confirmar, con un campo para el motivo (opcional): así no se pisa un dato sin querer.
+- Si otra persona cambió la celda mientras tanto, no se guarda: la app avisa y muestra el valor nuevo.
+- Corregir un valor dudoso del histórico (§9) le quita la marca de dudoso, porque el valor nuevo pasa la validación.
 
 ## 7. Vistas
 
@@ -282,11 +294,14 @@ Gráficas con ECharts, como el dashboard U044.
 ## 10. Respaldo y exportaciones
 
 - **Respaldo continuo:** Litestream copia cada cambio de la base a un bucket privado de Cloud Storage en aproximadamente un segundo, como en Avante. Se activa el versionado de objetos del bucket. La retención está pendiente (Avante usa 3 días).
-- **Exportación a Excel a demanda** (ingenieros y administrador), en dos formas:
-  - larga: una fila por medición, con fecha, punto, parámetro, fuente, calificador, valor y quién la registró;
-  - ancha, por fuente: parecida a las hojas de hoy, para quien quiera seguir trabajando en Excel.
-- **Exportación periódica automática** con el mismo contenido, a una carpeta del bucket. La frecuencia (semanal o mensual) está pendiente.
-- **SharePoint:** al inicio, el archivo se descarga y se sube a mano. Automatizar la entrega (Power Automate o Microsoft Graph) depende de permisos de TI; pendiente.
+- **Exportación a Excel a demanda** (ingenieros y administrador), en la página **Exportaciones**, en dos formas:
+  - larga: una fila por medición, con fecha, hora, punto, parámetro, fuente, calificador, valor, si es dudoso y quién la registró;
+  - ancha, por fuente: parecida a las hojas de hoy, para quien quiera seguir trabajando en Excel: una hoja por fuente, una fila por fecha y hora, una columna por punto y parámetro. Sin los dudosos.
+  - Se elige el rango de fechas y las fuentes. Se descarga al momento hasta 100.000 mediciones (Firebase corta las peticiones de más de 60 segundos); para más, está el archivo semanal.
+- **Exportación automática semanal** (decidido el 2026-10-20): **cada lunes** aparece en Exportaciones un archivo con **todos los datos hasta el domingo** (formato largo, una hoja por año, y ancho por fuente). Se guarda en la carpeta `exports/` del bucket.
+  - La app lo prepara sola en segundo plano en cuanto recibe la primera visita después del lunes a las 00:00 (con los tableristas capturando, en minutos). Tarda unos minutos.
+  - Se conservan todos; la página muestra los más recientes.
+- **SharePoint:** una persona descarga el archivo semanal y lo sube a mano (decidido el 2026-10-20). Automatizar la entrega (Power Automate o Microsoft Graph) queda para después; depende de permisos de TI.
 - El procedimiento de restauración se documenta en `docs/DESPLIEGUE.md` y se prueba.
 
 ## 11. Stack técnico y despliegue
@@ -322,7 +337,7 @@ El mismo de Avante, para mantener una sola forma de trabajar:
 
 - **Capturar debe ser más rápido que en Excel:** teclado (Tab y Enter), encabezados fijos y celdas que muestran al momento si quedaron guardadas o por qué no.
 - Interfaz en español. Los números se muestran con coma decimal; al capturar se acepta coma o punto.
-- Menú: **Variables importantes**, **Explorador**, **Captura** (solo para quien tenga ámbitos) y **Administración** (solo para el administrador). El capturista solo ve **Captura**.
+- Menú: **Variables importantes**, **Explorador**, **Exportaciones**, **Captura** (solo para quien tenga ámbitos) y **Administración** (solo para el administrador). El capturista solo ve **Captura**.
 - Las vistas de lectura deben poder usarse desde el celular.
 
 ## 14. Fases de desarrollo
@@ -377,9 +392,17 @@ Cada fase se entrega funcionando y con pruebas. Prioridad de las pruebas:
 - **"DBO" de Labviewer:** parámetro aparte, sin asumir que es DBO5.
 - **Producción:** la base local, con el histórico importado y revisado, reemplaza la de producción.
 
+### Decidido el 2026-10-20 (captura y exportaciones, §4, §6 y §10)
+- **Tableristas:** tienen lectura (rol Ingeniero, con todos los formatos).
+- **Capturista:** ve lo ya registrado en sus formatos y corrige o borra sus propias capturas de las últimas 24 horas, solo en su ámbito.
+- **Columnas sin datos recientes:** los formatos iniciales solo traen variables con datos desde octubre de 2025.
+- **Rejilla de Nalco:** las 24 horas del día elegido.
+- **Flujos de BA-4005C/D:** en un formato aparte, «Flujos de PI».
+- **Exportación automática:** semanal; cada lunes, un archivo con todos los datos hasta el domingo, para descargar en la app. Una persona lo sube a SharePoint a mano.
+
 ### Pendientes
-1. **Tableristas:** ¿tienen lectura o son capturistas sin lectura?
-2. **Capturista:** ¿ve lo ya registrado en su formato para esa fecha y hora, para no duplicar ni pisar datos? ¿Puede corregir sus propias capturas recientes? Propuesta: sí a ambas, solo dentro de su ámbito y solo las de las últimas 24 horas.
+1. ~~**Tableristas**~~: decidido el 2026-10-20.
+2. ~~**Capturista**~~: decidido el 2026-10-20.
 3. **BIOTA:** ¿en qué formato envía sus análisis?
 4. **Equivalencias de nombres:** ¿"SS" (Labviewer) es SST? ¿Cómo se relacionan H2S y RSH (Labviewer) con sulfuros (BIOTA)? ¿Qué es "S en aguas"?
 5. **"BA-4010" y "BA-4010 clarificada"** de «Datos LABORATORIO»:
@@ -390,8 +413,8 @@ Cada fase se entrega funcionando y con pruebas. Prioridad de las pruebas:
    - Ventana de pH: 6,4–8,5 en la hoja de límites de la tabla 1 y 6,5–8,5 en «Datos Calidad Fase 1». Es la que se dibuja en la vista de pH.
    - Entrada: los máximos de BA-4001 (40 °C, SST 470, fenol 55) contra «Datos Calidad Fase 1» (menos de 44 °C, SST menor de 600, fenol menor de 40).
 7. **Fuente** de los datos de separadores y agua agria, sodas, DIAPAC y Ecodiesel, y de los flujos y niveles de «Datos LABORATORIO». Mientras tanto, «Por confirmar».
-8. **Columnas casi vacías desde 2023** en «Datos LABORATORIO» (aguas agrias T-2590 y otras, teas, ácido, piscina pulmón): se importan, pero ¿se siguen capturando?
-9. **Respaldo:** frecuencia de la exportación automática, entrega a SharePoint y retención de Litestream.
+8. ~~**Columnas casi vacías**~~: decidido el 2026-10-20 (no entran en los formatos iniciales).
+9. **Respaldo:** la exportación semanal y la entrega a SharePoint se decidieron el 2026-10-20; falta la retención de Litestream (hoy 3 días, como Avante).
 10. **Nombre** de la app.
 11. **Reglas del análisis semanal (ICAV):** se definen al llegar a esa fase.
 

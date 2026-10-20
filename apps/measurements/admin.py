@@ -5,7 +5,7 @@ from .models import Measurement, MeasurementHistory, format_taken_at
 
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
-    """Read-only for now: corrections, with their history, come with the capture (phase 3)."""
+    """Read-only: values are corrected in the capture, which keeps their history."""
 
     list_display = ("variable", "when", "shown_value", "suspect", "origin", "created_by")
     list_filter = ("suspect", "origin", "time_precision", "variable__source", "variable__parameter", "variable__point")

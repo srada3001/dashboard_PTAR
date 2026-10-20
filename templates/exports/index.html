@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load exports %}
+{% block title %}Exportaciones{% endblock %}
+{% block content %}
+<header class="encabezado">
+  <h2>Exportaciones</h2>
+  <p class="ayuda">Los datos en Excel: el archivo de cada semana, con todo, o lo que elijas ahora.</p>
+</header>
+
+<section class="tarjeta panel" aria-labelledby="titulo-semanal">
+  <header class="panel__encabezado">
+    <h3 id="titulo-semanal">Archivo semanal</h3>
+    <p class="ayuda">Cada lunes, todos los datos hasta el domingo, en formato largo y ancho por fuente. Descárgalo y súbelo a SharePoint.</p>
+  </header>
+  {% include "exports/_weekly.html" %}
+</section>
+
+<section class="tarjeta panel" aria-labelledby="titulo-ahora">
+  <header class="panel__encabezado">
+    <h3 id="titulo-ahora">Exportar ahora</h3>
+    <p class="ayuda">Hasta {{ max_at_once|thousands }} mediciones por archivo. Para más, el archivo semanal.</p>
+  </header>
+  <form class="exportar" method="get" action="{% url 'exports_download' %}">
+    {% for error in form.non_field_errors %}<p class="mensaje mensaje--error">{{ error }}</p>{% endfor %}
+    <div class="explorador__fila">
+      {% for field in form %}{% if field.name == "start" or field.name == "end" %}
+        <div class="campo{% if field.errors %} campo--error{% endif %}">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<p class="error">{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}{% endfor %}
+    </div>
+    <fieldset class="opciones">
+      <legend>{{ form.sources.label }} <span class="ayuda">({{ form.sources.help_text }})</span></legend>
+      <div class="opciones__lista">
+        {% for choice in form.sources %}<label class="casilla">{{ choice.tag }} {{ choice.choice_label }}</label>{% endfor %}
+      </div>
+    </fieldset>
+    <fieldset class="opciones">
+      <legend>{{ form.shape.label }}</legend>
+      <div class="opciones__lista opciones__lista--columna">
+        {% for choice in form.shape %}<label class="casilla">{{ choice.tag }} {{ choice.choice_label }}</label>{% endfor %}
+      </div>
+    </fieldset>
+    <button type="submit" class="boton">Descargar</button>
+  </form>
+</section>
+{% endblock %}
