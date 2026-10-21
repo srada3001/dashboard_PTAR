@@ -349,6 +349,22 @@ class TestExplorer:
         assert 'data-parameter="1"' in html and 'data-group="explorador"' in html
         assert "DQO · BA-4010" in html  # the shared chart's table names the parameter
 
+    def test_one_list_per_parameter_in_the_order_chosen(self, admin_user, engineer_client, phenols_biota, phenols, ph, outlet, biota):
+        Variable.objects.create(point=outlet, parameter=ph, source=biota)
+        # pH first, then phenols, and a list added but left on «Elige un parámetro».
+        query = {"parameters": [ph.pk, phenols.pk, ""], "points": [outlet.pk], "start": DAY, "end": DAY}
+        response = engineer_client.get(reverse("explorer"), query)
+        assert [c.parameters[0].code for c in response.context["exploration"].charts] == ["pH", "Fenoles"]
+        html = response.content.decode()
+        chosen = re.findall(r'<option value="(\d+)" selected>', html)
+        assert chosen == [str(ph.pk), str(phenols.pk)]  # one list each; the empty one is dropped
+        assert "Añadir parámetro" in html and "data-parameter-row" in html
+
+    def test_a_new_page_has_one_empty_list(self, engineer_client, phenols_biota):
+        html = engineer_client.get(reverse("explorer")).content.decode()
+        assert html.count('<select name="parameters"') == 2  # the list, and the one «Añadir parámetro» copies
+        assert not re.search(r'<option value="\d+" selected>', html)
+
     def test_the_limits_go_with_their_parameter(self, engineer_client, phenols_biota, phenols, outlet, biota):
         cod = Parameter.objects.create(code="DQO", name="DQO", unit="mg/L")
         Variable.objects.create(point=outlet, parameter=cod, source=biota)

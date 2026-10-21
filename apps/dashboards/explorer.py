@@ -67,14 +67,19 @@ class ExplorerForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.is_bound and hasattr(self.data, "getlist"):
+            # A list added and left on «Elige un parámetro» is not an error: it is ignored.
+            self.data = self.data.copy()
+            self.data.setlist("parameters", [pk for pk in self.data.getlist("parameters") if pk])
         today = timezone.localdate()
         self.fields["end"].initial = today
         self.fields["start"].initial = today - datetime.timedelta(days=DEFAULT_DAYS - 1)
         self.fields["aggregation"].initial = AUTO
         # Choosing the parameters brings their points and sources without reloading the page.
         self.options_url = reverse("explorer_options")
-        # Not "parameters": in a template, form.parameters is the field.
-        self.chosen = list(self.fields["parameters"].queryset.filter(pk__in=self.selected_ids("parameters")))
+        # Not "parameters": in a template, form.parameters is the field. In the order they were chosen.
+        order = self.ordered_ids("parameters")
+        self.chosen = sorted(self.fields["parameters"].queryset.filter(pk__in=order), key=lambda p: order.index(p.pk))
         if self.chosen:
             self.fields["points"].queryset = point_choices(self.chosen)
             self.fields["sources"].queryset = source_choices(self.chosen)
@@ -86,6 +91,8 @@ class ExplorerForm(forms.Form):
             self.add_error("points", "Elige al menos un punto.")
         elif points and len(points) > MAX_POINTS:
             self.add_error("points", f"Elige hasta {MAX_POINTS} puntos: más colores no se distinguen en una gráfica.")
+        if data.get("parameters"):
+            data["parameters"] = self.chosen
         if not data.get("sources"):
             data["sources"] = list(self.fields["sources"].queryset)
         last_day = data.get("end") or self.fields["end"].initial
@@ -96,17 +103,24 @@ class ExplorerForm(forms.Form):
         data["aggregation"] = data.get("aggregation") or AUTO
         return data
 
-    # What the template needs to draw the checkboxes, grouped by zone and keeping the choices.
+    # What the template needs to draw the lists and checkboxes, keeping the choices.
 
-    def selected_ids(self, name):
-        """The ids checked in the request, or in `initial` (the options brought by HTMX)."""
+    def ordered_ids(self, name):
+        """The ids chosen in the request, or in `initial` (the options brought by HTMX), in order and
+        without repeats."""
         source = self.data if self.is_bound else self.initial
         values = source.getlist(name) if hasattr(source, "getlist") else source.get(name, [])
-        return {int(pk) for pk in values if str(pk).isdigit()}
+        return list(dict.fromkeys(int(pk) for pk in values if str(pk).isdigit()))
 
-    def parameter_options(self):
-        chosen = {parameter.pk for parameter in self.chosen}
-        return [(parameter, parameter.pk in chosen) for parameter in self.fields["parameters"].queryset]
+    def selected_ids(self, name):
+        return set(self.ordered_ids(name))
+
+    def parameter_rows(self):
+        """One list per chosen parameter (its id), or a single empty one."""
+        return [parameter.pk for parameter in self.chosen] or [None]
+
+    def parameter_list(self):
+        return list(self.fields["parameters"].queryset)
 
     def point_groups(self):
         """[(zone, [(point, checked), …]), …] in the plant's order."""

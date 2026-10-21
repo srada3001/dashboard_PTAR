@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load dashboards %}
+{% load dashboards static %}
 {% block title %}Explorador{% endblock %}
-{% block scripts %}{% include "dashboards/_chart_scripts.html" %}{% endblock %}
+{% block scripts %}{% include "dashboards/_chart_scripts.html" %}<script src="{% static 'js/explorer.js' %}" defer></script>{% endblock %}
 {% block content %}
 <header class="encabezado">
   <h2>Explorador</h2>
@@ -9,18 +9,18 @@
 </header>
 
 <form class="tarjeta explorador" method="get">
-  {# Checking a parameter brings the points and sources of the chosen ones, keeping the checked points. #}
-  <fieldset class="opciones{% if form.parameters.errors %} opciones--error{% endif %}"
-            hx-get="{{ form.options_url }}" hx-trigger="change" hx-target="#opciones" hx-include="[name=parameters], [name=points]">
-    <legend>Parámetros</legend>
-    {% for error in form.parameters.errors %}<p class="error">{{ error }}</p>{% endfor %}
-    <div class="opciones__lista opciones__lista--rejilla">
-      {% for parameter, checked in form.parameter_options %}
-        <label class="casilla" title="{{ parameter.name }}{% if parameter.unit %} ({{ parameter.unit }}){% endif %}"><input type="checkbox" name="parameters" value="{{ parameter.pk }}"{% if checked %} checked{% endif %}> {{ parameter.code }}</label>
-      {% endfor %}
-    </div>
-  </fieldset>
   <div class="explorador__fila">
+    {# Choosing, adding or removing a parameter brings the points and sources of the chosen ones, keeping the checked points. #}
+    <div class="campo campo--ancho{% if form.parameters.errors %} campo--error{% endif %}" data-parameters
+         hx-get="{{ form.options_url }}" hx-trigger="change" hx-target="#opciones" hx-include="[name=parameters], [name=points]">
+      <label for="id_parameters">Parámetro</label>
+      {% for chosen in form.parameter_rows %}
+        {% include "dashboards/_parameter_row.html" with first=forloop.first parameters=form.parameter_list %}
+      {% endfor %}
+      <template data-parameter-row>{% include "dashboards/_parameter_row.html" with chosen=None parameters=form.parameter_list %}</template>
+      <button type="button" class="enlace parametros__anadir" data-add-parameter>+ Añadir parámetro</button>
+      {% for error in form.parameters.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    </div>
     {% for field in form %}{% if field.name != "parameters" and field.name != "points" and field.name != "sources" %}
       <div class="campo{% if field.errors %} campo--error{% endif %}">
         <label for="{{ field.id_for_label }}">{{ field.label }}</label>

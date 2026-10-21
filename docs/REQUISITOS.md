@@ -225,6 +225,7 @@ Gráficas con ECharts, como el dashboard U044.
 
 ### 7.2 Explorador de series
 - Elegir uno o varios parámetros, sin máximo, y uno o varios puntos y fuentes; superponer las series; rango de fechas.
+  - El parámetro se elige en una lista desplegable; «Añadir parámetro» agrega otra lista igual y cada parámetro de más se puede quitar (decidido el 2026-10-21). Las gráficas siguen el orden en que se eligieron.
   - Los puntos que se ofrecen son los que miden alguno de los parámetros elegidos. Hasta 8 puntos, por la misma razón que en §7.1. Si no se marca ninguna fuente, se toman todas.
   - **Una gráfica por unidad** (decidido el 2026-10-21): los parámetros con la misma unidad comparten gráfica y eje; cada unidad tiene su gráfica y su tabla de estadística, una debajo de otra, con el mismo eje de tiempo.
   - En una gráfica con varios parámetros, el color sigue siendo el punto y la forma la fuente; cada parámetro se distingue por el trazo de la línea (continua, punteada…) y se puede ocultar, como los puntos y las fuentes.
