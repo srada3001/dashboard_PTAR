@@ -1,4 +1,4 @@
-{% comment %}The points and sources of the chosen parameters; replaced by HTMX when the parameters change.{% endcomment %}
+{% comment %}The points and sources of a block's parameter; replaced by HTMX when its parameter changes.{% endcomment %}
 {% if form.chosen %}
   <fieldset class="opciones{% if form.points.errors %} opciones--error{% endif %}">
     <legend>Puntos <span class="ayuda">(hasta {{ max_points }})</span></legend>
@@ -8,7 +8,7 @@
         <p class="opciones__zona">{{ zone }}</p>
         <div class="opciones__lista">
           {% for point, checked in points %}
-            <label class="casilla"><input type="checkbox" name="points" value="{{ point.pk }}"{% if checked %} checked{% endif %}> {{ point.code }}</label>
+            <label class="casilla"><input type="checkbox" name="{{ form.points_name }}" value="{{ point.pk }}"{% if checked %} checked{% endif %}> {{ point.code }}</label>
           {% endfor %}
         </div>
       </div>
@@ -18,10 +18,10 @@
     <legend>Fuentes</legend>
     <div class="opciones__lista">
       {% for source, checked in form.source_options %}
-        <label class="casilla"><input type="checkbox" name="sources" value="{{ source.pk }}"{% if checked %} checked{% endif %}> {{ source.code }}</label>
+        <label class="casilla"><input type="checkbox" name="{{ form.sources_name }}" value="{{ source.pk }}"{% if checked %} checked{% endif %}> {{ source.code }}</label>
       {% endfor %}
     </div>
   </fieldset>
 {% else %}
-  <p class="ayuda">Elige uno o varios parámetros para ver los puntos y las fuentes en que se miden.</p>
+  <p class="ayuda">Elige un parámetro para ver los puntos y las fuentes en que se mide.</p>
 {% endif %}

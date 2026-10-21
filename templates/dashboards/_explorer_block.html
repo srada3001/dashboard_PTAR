@@ -1,0 +1,18 @@
+{% comment %}
+A parameter of the explorer with its own points and sources. static/js/explorer.js copies the empty
+one for «Añadir parámetro» and removes blocks; the number in the title is a CSS counter, so it
+stays in order after a removal.
+Context: form (a ParameterBlockForm), max_points.
+{% endcomment %}
+<section class="tarjeta bloque" data-block aria-label="Parámetro">
+  <div class="bloque__encabezado">
+    <h3 class="bloque__titulo">Parámetro</h3>
+    <button type="button" class="enlace bloque__quitar" data-remove-block>Quitar</button>
+  </div>
+  <div class="campo{% if form.parameter.errors %} campo--error{% endif %}">
+    <label for="{{ form.parameter.id_for_label }}" class="sr-only">Parámetro</label>
+    {{ form.parameter }}
+    {% for error in form.parameter.errors %}<p class="error">{{ error }}</p>{% endfor %}
+  </div>
+  <div id="opciones-{{ form.prefix }}">{% include "dashboards/_explorer_options.html" %}</div>
+</section>

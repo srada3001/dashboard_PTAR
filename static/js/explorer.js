@@ -1,31 +1,31 @@
-/* The explorer's parameter lists (docs/REQUISITOS.md §7.2): «Añadir parámetro» adds a list with the
-   same menu and × removes one. Removing tells HTMX, so the points and sources follow; a new list
-   does it when a parameter is chosen in it. */
+/* The explorer's parameter blocks (docs/REQUISITOS.md §7.2): «Añadir parámetro» adds an empty block
+   below the others, which keep what they have; «Quitar» removes one. Each block's fields carry its
+   own prefix (p1-, p2-…), so a new block takes the next free number. */
 
 (function () {
   "use strict";
 
   function start() {
-    const box = document.querySelector("[data-parameters]");
-    if (!box) return;
-    const template = box.querySelector("template[data-parameter-row]");
+    const blocks = document.querySelector("[data-blocks]");
+    if (!blocks) return;
+    const template = document.querySelector("template[data-block-template]");
 
-    box.querySelector("[data-add-parameter]").addEventListener("click", () => {
-      const row = template.content.firstElementChild.cloneNode(true);
-      template.before(row);
-      row.querySelector("select").focus();
+    function nextNumber() {
+      const numbers = [...blocks.querySelectorAll("select[name$='-parameter']")].map((s) => Number(s.name.slice(1, -"-parameter".length)));
+      return Math.max(0, ...numbers) + 1;
+    }
+
+    document.querySelector("[data-add-block]").addEventListener("click", () => {
+      const html = template.innerHTML.replaceAll("p__n__", `p${nextNumber()}`);
+      blocks.insertAdjacentHTML("beforeend", html);
+      const block = blocks.lastElementChild;
+      htmx.process(block);
+      block.querySelector("select").focus();
     });
 
-    box.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-remove-parameter]");
-      if (!button) return;
-      const row = button.closest(".parametro");
-      const chosen = row.querySelector("select").value !== "";
-      row.remove();
-      const first = box.querySelector("select"); // the label points to the first list
-      first.id = "id_parameters";
-      first.removeAttribute("aria-label");
-      if (chosen) htmx.trigger(box, "change");
+    blocks.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-remove-block]");
+      if (button) button.closest("[data-block]").remove();
     });
   }
 

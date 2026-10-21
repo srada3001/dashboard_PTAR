@@ -168,6 +168,6 @@ class TestExplorerExport:
         from apps.dashboards import views as dashboard_views
 
         monkeypatch.setattr(dashboard_views, "MAX_AT_ONCE", 1)
-        query = {"parameters": phenols.pk, "points": [outlet.pk], "start": "2025-01-01", "end": "2026-10-19"}
+        query = {"p1-parameter": phenols.pk, "p1-points": [outlet.pk], "start": "2025-01-01", "end": "2026-10-19"}
         response = engineer_client.get(reverse("explorer_export"), query, follow=True)
         assert "archivo semanal" in response.content.decode()

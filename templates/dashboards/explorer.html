@@ -5,32 +5,30 @@
 {% block content %}
 <header class="encabezado">
   <h2>Explorador</h2>
-  <p class="ayuda">Uno o varios parámetros en uno o varios puntos y fuentes, con estadística descriptiva de cada serie. Los parámetros con la misma unidad comparten gráfica.</p>
+  <p class="ayuda">Uno o varios parámetros, cada uno en sus puntos y fuentes, con estadística descriptiva de cada serie. Los parámetros con la misma unidad comparten gráfica.</p>
 </header>
 
-<form class="tarjeta explorador" method="get">
-  <div class="explorador__fila">
-    {# Choosing, adding or removing a parameter brings the points and sources of the chosen ones, keeping the checked points. #}
-    <div class="campo campo--ancho{% if form.parameters.errors %} campo--error{% endif %}" data-parameters
-         hx-get="{{ form.options_url }}" hx-trigger="change" hx-target="#opciones" hx-include="[name=parameters], [name=points]">
-      <label for="id_parameters">Parámetro</label>
-      {% for chosen in form.parameter_rows %}
-        {% include "dashboards/_parameter_row.html" with first=forloop.first parameters=form.parameter_list %}
+<form class="explorador" method="get">
+  <section class="tarjeta explorador__comun" aria-labelledby="fechas">
+    <h3 id="fechas" class="explorador__titulo">Fechas y gráfica <span class="ayuda">· para todos los parámetros</span></h3>
+    <div class="explorador__fila">
+      {% for field in form %}
+        <div class="campo{% if field.errors %} campo--error{% endif %}">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<p class="error">{{ error }}</p>{% endfor %}
+        </div>
       {% endfor %}
-      <template data-parameter-row>{% include "dashboards/_parameter_row.html" with chosen=None parameters=form.parameter_list %}</template>
-      <button type="button" class="enlace parametros__anadir" data-add-parameter>+ Añadir parámetro</button>
-      {% for error in form.parameters.errors %}<p class="error">{{ error }}</p>{% endfor %}
     </div>
-    {% for field in form %}{% if field.name != "parameters" and field.name != "points" and field.name != "sources" %}
-      <div class="campo{% if field.errors %} campo--error{% endif %}">
-        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {{ field }}
-        {% for error in field.errors %}<p class="error">{{ error }}</p>{% endfor %}
-      </div>
-    {% endif %}{% endfor %}
+  </section>
+  <div class="bloques" data-blocks>
+    {% for block in form.blocks %}{% include "dashboards/_explorer_block.html" with form=block %}{% endfor %}
   </div>
-  <div id="opciones">{% include "dashboards/_explorer_options.html" %}</div>
-  <button type="submit" class="boton">Ver series</button>
+  <template data-block-template>{% include "dashboards/_explorer_block.html" with form=form.empty_block %}</template>
+  <div class="explorador__acciones">
+    <button type="button" class="boton boton--secundario" data-add-block>+ Añadir parámetro</button>
+    <button type="submit" class="boton">Ver series</button>
+  </div>
 </form>
 
 {% if exploration %}

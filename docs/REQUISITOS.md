@@ -224,11 +224,12 @@ Gráficas con ECharts, como el dashboard U044.
 | G&A | 15 mg/L | Nalco, Labviewer y BIOTA (este último en BA-4010 desde junio de 2025) |
 
 ### 7.2 Explorador de series
-- Elegir uno o varios parámetros, sin máximo, y uno o varios puntos y fuentes; superponer las series; rango de fechas.
-  - El parámetro se elige en una lista desplegable; «Añadir parámetro» agrega otra lista igual y cada parámetro de más se puede quitar (decidido el 2026-10-21). Las gráficas siguen el orden en que se eligieron.
-  - Los puntos que se ofrecen son los que miden alguno de los parámetros elegidos. Hasta 8 puntos, por la misma razón que en §7.1. Si no se marca ninguna fuente, se toman todas.
-  - **Una gráfica por unidad** (decidido el 2026-10-21): los parámetros con la misma unidad comparten gráfica y eje; cada unidad tiene su gráfica y su tabla de estadística, una debajo de otra, con el mismo eje de tiempo.
-  - En una gráfica con varios parámetros, el color sigue siendo el punto y la forma la fuente; cada parámetro se distingue por el trazo de la línea (continua, punteada…) y se puede ocultar, como los puntos y las fuentes.
+- Elegir uno o varios parámetros, sin máximo, cada uno con sus puntos y fuentes; superponer las series; rango de fechas (decidido el 2026-10-21).
+  - Las fechas y el tipo de gráfica se piden una vez y valen para todos los parámetros.
+  - Cada parámetro es un bloque: su lista desplegable y, debajo, los puntos y las fuentes que lo miden. «Añadir parámetro» agrega un bloque nuevo sin tocar los que ya están; cada bloque se puede quitar. Un parámetro va en un solo bloque.
+  - Hasta 8 puntos por parámetro, por la misma razón que en §7.1. Si no se marca ninguna fuente, se toman todas las de ese parámetro.
+  - **Una gráfica por unidad:** los parámetros con la misma unidad comparten gráfica y eje; cada unidad tiene su gráfica y su tabla de estadística, una debajo de otra, con el mismo eje de tiempo. Las gráficas siguen el orden de los bloques.
+  - En una gráfica con varios parámetros, el color sigue siendo el punto y la forma la fuente; cada parámetro se distingue por el trazo de la línea (continua, punteada…) y se puede ocultar, como los puntos y las fuentes. Si entre todos los parámetros de la gráfica hay más de 8 puntos, los colores se repiten.
   - Por defecto, los últimos 90 días.
 - Estadística descriptiva por serie: número de muestras, promedio, mediana, mínimo, máximo, desviación estándar, percentiles 10 y 90 y % de muestras por encima del límite.
   - Siempre con las mediciones sin agregar. Desviación estándar muestral (DESVEST.M de Excel) y percentiles con interpolación (PERCENTIL.INC).

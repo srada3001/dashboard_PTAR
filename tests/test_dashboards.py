@@ -257,9 +257,16 @@ class TestInitialImportantVariables:
 
 
 class TestExplorer:
-    def query(self, parameters, points, **extra):
+    def query(self, parameters, points, sources=None, number=1, **extra):
+        """One block per parameter (p1-, p2-… from `number`), all at the same points and sources."""
         parameters = parameters if isinstance(parameters, list) else [parameters]
-        return {"parameters": [p.pk for p in parameters], "points": [p.pk for p in points], **extra}
+        data = dict(extra)
+        for n, parameter in enumerate(parameters, start=number):
+            data[f"p{n}-parameter"] = parameter.pk
+            data[f"p{n}-points"] = [p.pk for p in points]
+            if sources:
+                data[f"p{n}-sources"] = sources
+        return data
 
     def test_statistics_per_series(self, admin_user, engineer_client, phenols_biota, phenols, outlet):
         for hour, value in enumerate((1, 2, 3, 4, 10), start=7):
@@ -295,7 +302,7 @@ class TestExplorer:
     def test_only_the_parameters_points_and_sources_are_offered(self, engineer_client, phenols_biota, phenols, ph, nalco):
         other = SamplingPoint.objects.create(code="SE-3010")
         Variable.objects.create(point=other, parameter=ph, source=nalco)
-        html = engineer_client.get(reverse("explorer_options"), {"parameters": phenols.pk}).content.decode()
+        html = engineer_client.get(reverse("explorer_options"), {"prefix": "p1", "p1-parameter": phenols.pk}).content.decode()
         assert "BA-4010" in html and "BIOTA" in html
         assert "SE-3010" not in html and "Nalco" not in html
         assert "Elige al menos un punto" not in html  # just chosen: not an error yet
@@ -328,9 +335,9 @@ class TestExplorer:
         assert stats[4][:5] == ("Fenoles", "mg/L", "BA-4010 · BIOTA", 2, pytest.approx(0.2))
         assert stats[4][-1] == 1  # the suspect value, left out
 
-    def test_a_parameter_is_required(self, engineer_client, phenols_biota, outlet):
-        html = engineer_client.get(reverse("explorer"), {"points": [outlet.pk]}).content.decode()
-        assert "Elige al menos un parámetro" in html
+    def test_a_parameter_is_required(self, engineer_client, phenols_biota):
+        html = engineer_client.get(reverse("explorer"), {"start": DAY, "end": DAY}).content.decode()
+        assert "Elige un parámetro." in html
 
     def test_parameters_with_the_same_unit_share_a_chart(self, admin_user, engineer_client, phenols_biota, phenols, ph, outlet, biota):
         cod = Parameter.objects.create(code="DQO", name="Demanda química de oxígeno", unit="mg/L")
@@ -349,38 +356,53 @@ class TestExplorer:
         assert 'data-parameter="1"' in html and 'data-group="explorador"' in html
         assert "DQO · BA-4010" in html  # the shared chart's table names the parameter
 
-    def test_one_list_per_parameter_in_the_order_chosen(self, admin_user, engineer_client, phenols_biota, phenols, ph, outlet, biota):
+    def test_each_parameter_has_its_own_points(self, admin_user, engineer_client, phenols_biota, phenols, ph, outlet, entry, biota):
+        ph_entry = Variable.objects.create(point=entry, parameter=ph, source=biota)
+        ph_outlet = Variable.objects.create(point=outlet, parameter=ph, source=biota)
+        for variable in (phenols_biota, ph_entry, ph_outlet):
+            measure(variable, admin_user, at(DAY, 7), 1)
+        query = {**self.query([phenols], [outlet], start=DAY, end=DAY), **self.query([ph], [entry], number=2)}
+        exploration = engineer_client.get(reverse("explorer"), query).context["exploration"]
+        assert {(v.parameter.code, v.point.code) for v in exploration.variables} == {("Fenoles", "BA-4010"), ("pH", "BA-4001")}
+
+    def test_blocks_keep_their_order_and_empty_ones_are_ignored(self, engineer_client, phenols_biota, phenols, ph, outlet, biota):
         Variable.objects.create(point=outlet, parameter=ph, source=biota)
-        # pH first, then phenols, and a list added but left on «Elige un parámetro».
-        query = {"parameters": [ph.pk, phenols.pk, ""], "points": [outlet.pk], "start": DAY, "end": DAY}
+        # pH first, then phenols, and a block added but left on «Elige un parámetro».
+        query = {**self.query([ph, phenols], [outlet], start=DAY, end=DAY), "p3-parameter": ""}
         response = engineer_client.get(reverse("explorer"), query)
         assert [c.parameters[0].code for c in response.context["exploration"].charts] == ["pH", "Fenoles"]
         html = response.content.decode()
-        chosen = re.findall(r'<option value="(\d+)" selected>', html)
-        assert chosen == [str(ph.pk), str(phenols.pk)]  # one list each; the empty one is dropped
-        assert "Añadir parámetro" in html and "data-parameter-row" in html
+        assert re.findall(r'<option value="(\d+)" selected>', html) == [str(ph.pk), str(phenols.pk)]
+        assert 'name="p3-parameter"' not in html
+        assert 'name="p__n__-parameter"' in html and "Añadir parámetro" in html  # the block «Añadir parámetro» copies
 
-    def test_a_new_page_has_one_empty_list(self, engineer_client, phenols_biota):
+    def test_a_new_page_has_one_empty_block(self, engineer_client, phenols_biota):
         html = engineer_client.get(reverse("explorer")).content.decode()
-        assert html.count('<select name="parameters"') == 2  # the list, and the one «Añadir parámetro» copies
+        assert 'name="p1-parameter"' in html and 'name="p2-parameter"' not in html
         assert not re.search(r'<option value="\d+" selected>', html)
+        assert "Elige un parámetro." not in html  # not an error before asking
 
-    def test_the_limits_go_with_their_parameter(self, engineer_client, phenols_biota, phenols, outlet, biota):
+    def test_a_parameter_goes_in_one_block(self, engineer_client, phenols_biota, phenols, outlet):
+        html = engineer_client.get(reverse("explorer"), self.query([phenols, phenols], [outlet])).content.decode()
+        assert "Ese parámetro ya está en otro bloque" in html
+        assert "Exportar a Excel" not in html
+
+    def test_the_limits_go_with_their_parameter_and_its_points(self, engineer_client, phenols_biota, phenols, outlet, entry, biota):
         cod = Parameter.objects.create(code="DQO", name="DQO", unit="mg/L")
         Variable.objects.create(point=outlet, parameter=cod, source=biota)
+        Variable.objects.create(point=entry, parameter=cod, source=biota)
         Limit.objects.create(point=outlet, parameter=phenols, kind=Limit.Kind.DISCHARGE, max_value=0.2)
-        response = engineer_client.get(reverse("explorer"), self.query([cod, phenols], [outlet], start=DAY, end=DAY))
-        [limit] = response.context["exploration"].charts[0].chart["limits"]
+        Limit.objects.create(point=entry, parameter=phenols, kind=Limit.Kind.DESIGN, max_value=4)  # phenols are not asked there
+        query = {**self.query([cod], [outlet, entry], start=DAY, end=DAY), **self.query([phenols], [outlet], number=2)}
+        [limit] = engineer_client.get(reverse("explorer"), query).context["exploration"].charts[0].chart["limits"]
         assert limit["parameter"] == 1 and limit["text"].startswith("Fenoles · BA-4010")
 
-    def test_the_options_join_the_parameters_and_keep_the_points(self, engineer_client, phenols_biota, phenols, ph, outlet, nalco):
+    def test_the_options_of_a_block(self, engineer_client, phenols_biota, phenols, ph, nalco):
         other = SamplingPoint.objects.create(code="SE-3010")
         Variable.objects.create(point=other, parameter=ph, source=nalco)
-        options = {"parameters": [phenols.pk, ph.pk], "points": [outlet.pk]}
-        html = engineer_client.get(reverse("explorer_options"), options).content.decode()
-        assert "SE-3010" in html and "Nalco" in html and "BIOTA" in html
-        assert re.search(rf'name="points" value="{outlet.pk}" checked', html)
-        assert not re.search(rf'name="points" value="{other.pk}" checked', html)
+        html = engineer_client.get(reverse("explorer_options"), {"prefix": "p2", "p2-parameter": ph.pk}).content.decode()
+        assert f'name="p2-points" value="{other.pk}"' in html and 'name="p2-sources"' in html
+        assert "BA-4010" not in html and "BIOTA" not in html
 
     def test_export_of_several_parameters(self, admin_user, engineer_client, phenols_biota, phenols, ph, outlet, biota):
         ph_biota = Variable.objects.create(point=outlet, parameter=ph, source=biota)
@@ -394,12 +416,12 @@ class TestExplorer:
         assert sorted(row[3] for row in list(book["Mediciones"].iter_rows(values_only=True))[1:]) == ["Fenoles", "pH"]
 
     def test_an_invalid_export_goes_back_to_the_form(self, engineer_client, phenols):
-        response = engineer_client.get(reverse("explorer_export"), {"parameters": phenols.pk})
+        response = engineer_client.get(reverse("explorer_export"), {"p1-parameter": phenols.pk})
         assert response.status_code == 302 and response.url.startswith(reverse("explorer"))
 
 
 class TestCapturerReadsNothing:
     @pytest.mark.parametrize("name", ["explorer_options", "explorer_export"])
     def test_explorer_data_is_forbidden(self, capturer_client, phenols_biota, phenols, outlet, name):
-        response = capturer_client.get(reverse(name), {"parameters": phenols.pk, "points": [outlet.pk]})
+        response = capturer_client.get(reverse(name), {"p1-parameter": phenols.pk, "p1-points": [outlet.pk]})
         assert response.status_code == 403

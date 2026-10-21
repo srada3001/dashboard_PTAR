@@ -1,4 +1,5 @@
 import datetime
+import re
 from urllib.parse import urlencode
 
 from django import forms
@@ -15,7 +16,7 @@ from apps.exports.views import MAX_AT_ONCE
 from apps.measurements.models import Measurement
 
 from . import export
-from .explorer import ExplorerForm, explore
+from .explorer import ExplorerForm, ParameterBlockForm, chosen_variables, explore
 from .models import MAX_POINTS
 from .panels import CHART_DAYS, DAILY_MEANS_FROM, DEFAULT_CHART_DAYS, build_cards
 
@@ -65,9 +66,9 @@ def important_variables(request):
 
 @reader_required
 def explorer(request):
-    """Any parameter, points and sources, with descriptive statistics (§7.2)."""
+    """Parameters, each at its points and sources, with descriptive statistics (§7.2)."""
     form = ExplorerForm(request.GET or None)
-    exploration = explore(form.cleaned_data) if form.is_bound and form.is_valid() else None
+    exploration = explore(form) if form.is_bound and form.is_valid() else None
     return render(request, "dashboards/explorer.html", {
         "form": form, "exploration": exploration, "max_points": MAX_POINTS, "query": request.GET.urlencode(),
     })
@@ -75,10 +76,12 @@ def explorer(request):
 
 @reader_required
 def explorer_options(request):
-    """The points and sources of the parameters, for the explorer's form (HTMX)."""
-    # Unbound: parameters just chosen are not an error for having no points yet. The points already
-    # checked stay checked; the sources go back to all, since a new parameter may bring new ones.
-    form = ExplorerForm(initial={name: request.GET.getlist(name) for name in ("parameters", "points")})
+    """The points and sources of a block's parameter, for the explorer's form (HTMX)."""
+    prefix = request.GET.get("prefix", "")
+    if not re.fullmatch(r"p\d+", prefix):
+        prefix = "p1"
+    # Unbound: a parameter just chosen is not an error for having no points yet.
+    form = ParameterBlockForm(prefix=prefix, initial={f"{prefix}-parameter": request.GET.get(f"{prefix}-parameter")})
     return render(request, "dashboards/_explorer_options.html", {"form": form, "max_points": MAX_POINTS})
 
 
@@ -88,12 +91,13 @@ def explorer_export(request):
     form = ExplorerForm(request.GET or None)
     if not (form.is_bound and form.is_valid()):
         return redirect(f"{reverse('explorer')}?{request.GET.urlencode()}")
-    total = export.measurement_count(form.cleaned_data)
+    data = form.cleaned_data
+    total = export.measurement_count(chosen_variables(form.selections()), data["start"], data["end"])
     if total > MAX_AT_ONCE:
         messages.error(request, (
             f"Son {thousands(total)} mediciones; al momento se descargan hasta {thousands(MAX_AT_ONCE)}. "
             "Acorta las fechas o usa el archivo semanal de Exportaciones, que tiene todos los datos."
         ))
         return redirect(f"{reverse('explorer')}?{request.GET.urlencode()}")
-    exploration = explore(form.cleaned_data)
+    exploration = explore(form)
     return FileResponse(export.workbook(exploration), as_attachment=True, filename=export.filename(exploration))
