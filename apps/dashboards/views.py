@@ -75,9 +75,10 @@ def explorer(request):
 
 @reader_required
 def explorer_options(request):
-    """The points and sources of a parameter, for the explorer's form (HTMX)."""
-    # Unbound: a parameter just chosen is not an error for having no points yet.
-    form = ExplorerForm(initial={"parameter": request.GET.get("parameter")})
+    """The points and sources of the parameters, for the explorer's form (HTMX)."""
+    # Unbound: parameters just chosen are not an error for having no points yet. The points already
+    # checked stay checked; the sources go back to all, since a new parameter may bring new ones.
+    form = ExplorerForm(initial={name: request.GET.getlist(name) for name in ("parameters", "points")})
     return render(request, "dashboards/_explorer_options.html", {"form": form, "max_points": MAX_POINTS})
 
 

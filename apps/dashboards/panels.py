@@ -66,7 +66,7 @@ def build_card(item, last_day, chart_days):
     card = Card(item)
     if not points:
         return card
-    variables = list(Variable.objects.filter(parameter=parameter, point__in=points).select_related("point", "source"))
+    variables = list(Variable.objects.filter(parameter=parameter, point__in=points).select_related("point", "source", "parameter"))
     book = LimitBook(Limit.objects.filter(parameter=parameter, point__in=points).select_related("point", "parameter"))
 
     chart_first = last_days(last_day, chart_days)
@@ -98,7 +98,7 @@ def build_card(item, last_day, chart_days):
         ))
 
     period = Period.DAY if chart_days >= DAILY_MEANS_FROM else None
-    card.chart = chart_data(parameter, points, variables, chart_samples, book, chart_first, last_day, period)
+    card.chart = chart_data([parameter], points, variables, chart_samples, {parameter.pk: book}, chart_first, last_day, period)
     return card
 
 

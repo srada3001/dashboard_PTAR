@@ -204,14 +204,14 @@ Gráficas con ECharts, como el dashboard U044.
 - **Promedio de los últimos 7 días y de los últimos 30 días.**
 - Los promedios son el promedio aritmético de las mediciones de la ventana, calculado por serie (punto + fuente).
 - **Valores con calificador:** en la gráfica llevan un marcador propio. En la estadística cuentan como el peor caso: "<0,1" como 0,1 y ">500" como 500.
-- **Fenoles:** **BA-4001 (01, entrada), BA-4008 (08, biorreactor) y BA-4010 (10, salida) en la misma gráfica**, cada punto con su color. Solo esos tres puntos. Como la entrada ronda 1–4 mg/L y la salida 0,1 mg/L, el eje se puede cambiar a escala logarítmica para que la salida y su límite de 0,2 mg/L se lean.
+- **Fenoles:** **BA-4001 (01, entrada), BA-4008 (08, biorreactor) y BA-4010 (10, salida) en la misma gráfica**, cada punto con su color. Solo esos tres puntos.
 - **Fuentes:** si la variable se mide con varias fuentes, se muestran todas. El color distingue el punto y la forma del marcador distingue la fuente. La fuente oficial para el cumplimiento se escogerá después.
 - Los datos que no hay dejan un hueco en la gráfica. Los dudosos del histórico (§9) no se grafican ni entran en la estadística hasta que alguien los revise.
 - **Puntos de cada variable:** se configuran en la administración (Vistas → Variables importantes), **hasta 8 por gráfica**, uno por color: con más colores las series ya no se distinguen. Se muestran todas las fuentes que miden el parámetro en esos puntos; para comparar otros puntos está el explorador. Configuración inicial (propuesta, se ajusta en la administración): fenoles en BA-4001, BA-4008 y BA-4010; temperatura, pH, SST y G&A en BA-4001, BA-4005C, BA-4005D, DNF entrada, CL-4080 salida, BA-4008, BA-4009A y BA-4010.
 - **Ventanas:** días calendario de Bogotá que terminan en la fecha «Hasta» (hoy, por defecto; se puede elegir otra para consultar el pasado). Los últimos 7 días al 19 de octubre son del 13 al 19, sin importar la hora, así que una muestra con solo el día cuenta en su día. La gráfica muestra 7, 30, 90 o 365 días; desde 90, con promedios diarios.
 - **Fuera de límite, 7 días:** cuántas muestras de los últimos 7 días rompen el límite vigente en su fecha, de las que tienen límite. Sin muestras es «sin datos»; sin límite definido, «sin límite». Además, el último valor se marca si está fuera del límite.
 - **Huecos:** la línea se corta cuando una serie pasa más de tres veces su intervalo habitual sin datos (y al menos un día), o cuando falta un día, una semana o un mes de promedios.
-- Todas las gráficas se pueden ver en escala logarítmica (también sirve en SST y G&A, que van de decenas a miles de mg/L) y se pueden ocultar puntos y fuentes.
+- En todas las gráficas se pueden ocultar puntos y fuentes. El eje es siempre lineal: no hay escala logarítmica (decidido el 2026-10-21).
 
 **Dónde se mide hoy cada una:**
 
@@ -224,8 +224,10 @@ Gráficas con ECharts, como el dashboard U044.
 | G&A | 15 mg/L | Nalco, Labviewer y BIOTA (este último en BA-4010 desde junio de 2025) |
 
 ### 7.2 Explorador de series
-- Elegir un parámetro y uno o varios puntos y fuentes; superponer las series; rango de fechas.
-  - Hasta 8 puntos, por la misma razón que en §7.1. Si no se marca ninguna fuente, se toman todas.
+- Elegir uno o varios parámetros, sin máximo, y uno o varios puntos y fuentes; superponer las series; rango de fechas.
+  - Los puntos que se ofrecen son los que miden alguno de los parámetros elegidos. Hasta 8 puntos, por la misma razón que en §7.1. Si no se marca ninguna fuente, se toman todas.
+  - **Una gráfica por unidad** (decidido el 2026-10-21): los parámetros con la misma unidad comparten gráfica y eje; cada unidad tiene su gráfica y su tabla de estadística, una debajo de otra, con el mismo eje de tiempo.
+  - En una gráfica con varios parámetros, el color sigue siendo el punto y la forma la fuente; cada parámetro se distingue por el trazo de la línea (continua, punteada…) y se puede ocultar, como los puntos y las fuentes.
   - Por defecto, los últimos 90 días.
 - Estadística descriptiva por serie: número de muestras, promedio, mediana, mínimo, máximo, desviación estándar, percentiles 10 y 90 y % de muestras por encima del límite.
   - Siempre con las mediciones sin agregar. Desviación estándar muestral (DESVEST.M de Excel) y percentiles con interpolación (PERCENTIL.INC).
@@ -233,7 +235,7 @@ Gráficas con ECharts, como el dashboard U044.
   - Los dudosos no entran; la tabla dice cuántos se dejaron fuera en cada serie.
 - Agregación diaria, semanal o mensual para las series largas.
   - Solo cambia lo que dibuja la gráfica. Automática: sin agregar hasta 3 meses, promedios diarios hasta 3 años y semanales para más; se puede elegir otra.
-- Exportar a Excel lo que se está viendo: hoja «Estadística», hoja «Mediciones» (formato largo: fecha, hora, punto, parámetro, fuente, calificador, valor, unidad y quién la registró) y, si la gráfica es de promedios, una hoja con ellos. Sin los dudosos.
+- Exportar a Excel lo que se está viendo, todos los parámetros en el mismo libro: hoja «Estadística», hoja «Mediciones» (formato largo: fecha, hora, punto, parámetro, fuente, calificador, valor, unidad y quién la registró) y, si la gráfica es de promedios, una hoja con ellos. Sin los dudosos.
 
 ## 8. Límites y cumplimiento
 

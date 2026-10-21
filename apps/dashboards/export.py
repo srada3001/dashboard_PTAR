@@ -60,20 +60,19 @@ def measurements_sheet(book, exploration):
 
 def statistics_sheet(book, exploration):
     sheet = book.create_sheet("Estadística")
-    sheet.column_dimensions["A"].width = 30
-    parameter = exploration.parameter
-    unit = f" ({parameter.unit})" if parameter.unit else ""
-    sheet.append([f"{parameter.name}{unit}"])
+    sheet.column_dimensions["A"].width = 20
+    sheet.column_dimensions["C"].width = 30
+    sheet.append(["; ".join(f"{p.name} ({p.unit})" if p.unit else p.name for p in exploration.parameters)])
     sheet.append(["Desde", date_cell(sheet, exploration.first_day), "Hasta", date_cell(sheet, exploration.last_day)])
     sheet.append([])
     header(
-        sheet, "Serie", "Muestras", "Promedio", "Mediana", "Mínimo", "Máximo", "Desviación estándar", "P10", "P90",
+        sheet, "Parámetro", "Unidad", "Serie", "Muestras", "Promedio", "Mediana", "Mínimo", "Máximo", "Desviación estándar", "P10", "P90",
         "Con límite vigente", "Fuera de límite", "% fuera de límite", "Dudosos (excluidos)",
     )
     for result in exploration.results:
-        d, e = result.description, result.exceedance
+        d, e, variable = result.description, result.exceedance, result.variable
         sheet.append([
-            f"{result.variable.point} · {result.variable.source}", d.n, d.mean, d.median, d.minimum, d.maximum, d.std,
+            variable.parameter.code, variable.parameter.unit, f"{variable.point} · {variable.source}", d.n, d.mean, d.median, d.minimum, d.maximum, d.std,
             d.p10, d.p90, e.checked, e.out, e.percent, result.suspect,
         ])
     sheet.append([])
@@ -88,17 +87,21 @@ def statistics_sheet(book, exploration):
 
 def means_sheet(book, exploration):
     sheet = book.create_sheet(exploration.period_name.capitalize()[:31])
-    sheet.column_dimensions["A"].width = 30
-    header(sheet, "Serie", "Desde", "Promedio", "Muestras", "Con calificador")
+    sheet.column_dimensions["A"].width = 20
+    sheet.column_dimensions["B"].width = 30
+    header(sheet, "Parámetro", "Serie", "Desde", "Promedio", "Muestras", "Con calificador")
     for variable in exploration.variables:
         for bucket in aggregate(exploration.samples.get(variable.pk, []), exploration.period):
-            sheet.append([f"{variable.point} · {variable.source}", date_cell(sheet, bucket.start), bucket.mean, bucket.n, bucket.qualified])
+            sheet.append([
+                variable.parameter.code, f"{variable.point} · {variable.source}", date_cell(sheet, bucket.start),
+                bucket.mean, bucket.n, bucket.qualified,
+            ])
 
 
 def measurement_count(data):
     """How many measurements an export of the explorer's form would hold."""
     start, end = day_span(data["start"], data["end"])
-    variables = Variable.objects.filter(parameter=data["parameter"], point__in=data["points"], source__in=data["sources"])
+    variables = Variable.objects.filter(parameter__in=data["parameters"], point__in=data["points"], source__in=data["sources"])
     return Measurement.objects.filter(variable__in=variables, suspect=False, taken_at__gte=start, taken_at__lt=end).count()
 
 
@@ -115,5 +118,9 @@ def workbook(exploration):
 
 
 def filename(exploration):
-    code = re.sub(r"[^\w.-]+", "_", exploration.parameter.code).strip("_") or "parametro"
+    """'explorador_Fenoles_…' for a parameter, 'explorador_3_parametros_…' for several."""
+    if len(exploration.parameters) > 1:
+        code = f"{len(exploration.parameters)}_parametros"
+    else:
+        code = re.sub(r"[^\w.-]+", "_", exploration.parameters[0].code).strip("_") or "parametro"
     return f"explorador_{code}_{exploration.first_day:%Y-%m-%d}_{exploration.last_day:%Y-%m-%d}.xlsx"

@@ -1,5 +1,6 @@
-"""The series explorer (docs/REQUISITOS.md §7.2): a parameter at one or more points and sources,
-between two dates, with descriptive statistics per series.
+"""The series explorer (docs/REQUISITOS.md §7.2): one or more parameters at one or more points and
+sources, between two dates, with descriptive statistics per series. Parameters with the same unit
+share a chart.
 
 The statistics always use the measurements themselves; the daily, weekly or monthly aggregation
 only changes what the chart draws, so long series stay readable.
@@ -41,20 +42,20 @@ def automatic_period(first_day, last_day):
     return Period.WEEK
 
 
-def point_choices(parameter):
-    return SamplingPoint.objects.filter(pk__in=Variable.objects.filter(parameter=parameter).values("point")).select_related("area")
+def point_choices(parameters):
+    """The points that measure any of the parameters."""
+    return SamplingPoint.objects.filter(pk__in=Variable.objects.filter(parameter__in=parameters).values("point")).select_related("area")
 
 
-def source_choices(parameter):
-    return Source.objects.filter(pk__in=Variable.objects.filter(parameter=parameter).values("source"))
+def source_choices(parameters):
+    return Source.objects.filter(pk__in=Variable.objects.filter(parameter__in=parameters).values("source"))
 
 
 class ExplorerForm(forms.Form):
-    parameter = forms.ModelChoiceField(
+    parameters = forms.ModelMultipleChoiceField(
         Parameter.objects.filter(pk__in=Variable.objects.values("parameter")),
-        label="Parámetro",
-        empty_label="Elige un parámetro",
-        error_messages={"required": "Elige un parámetro."},
+        label="Parámetros",
+        error_messages={"required": "Elige al menos un parámetro."},
     )
     points = forms.ModelMultipleChoiceField(SamplingPoint.objects.none(), label="Puntos", required=False)
     sources = forms.ModelMultipleChoiceField(
@@ -70,25 +71,18 @@ class ExplorerForm(forms.Form):
         self.fields["end"].initial = today
         self.fields["start"].initial = today - datetime.timedelta(days=DEFAULT_DAYS - 1)
         self.fields["aggregation"].initial = AUTO
-        # Choosing a parameter brings its points and sources without reloading the page.
-        self.fields["parameter"].widget.attrs.update({"hx-get": reverse("explorer_options"), "hx-target": "#opciones"})
-        # Not "parameter": in a template, form.parameter is the field.
-        self.chosen = self.find_parameter()
-        if self.chosen is not None:
+        # Choosing the parameters brings their points and sources without reloading the page.
+        self.options_url = reverse("explorer_options")
+        # Not "parameters": in a template, form.parameters is the field.
+        self.chosen = list(self.fields["parameters"].queryset.filter(pk__in=self.selected_ids("parameters")))
+        if self.chosen:
             self.fields["points"].queryset = point_choices(self.chosen)
             self.fields["sources"].queryset = source_choices(self.chosen)
-
-    def find_parameter(self):
-        try:
-            pk = int(self.data.get("parameter") or self.initial.get("parameter") or "")
-        except ValueError:
-            return None
-        return self.fields["parameter"].queryset.filter(pk=pk).first()
 
     def clean(self):
         data = super().clean()
         points = data.get("points")
-        if data.get("parameter") and not points and "points" not in self.errors:
+        if data.get("parameters") and not points and "points" not in self.errors:
             self.add_error("points", "Elige al menos un punto.")
         elif points and len(points) > MAX_POINTS:
             self.add_error("points", f"Elige hasta {MAX_POINTS} puntos: más colores no se distinguen en una gráfica.")
@@ -105,10 +99,14 @@ class ExplorerForm(forms.Form):
     # What the template needs to draw the checkboxes, grouped by zone and keeping the choices.
 
     def selected_ids(self, name):
-        if not self.is_bound:
-            return set()
-        values = self.data.getlist(name) if hasattr(self.data, "getlist") else self.data.get(name, [])
+        """The ids checked in the request, or in `initial` (the options brought by HTMX)."""
+        source = self.data if self.is_bound else self.initial
+        values = source.getlist(name) if hasattr(source, "getlist") else source.get(name, [])
         return {int(pk) for pk in values if str(pk).isdigit()}
+
+    def parameter_options(self):
+        chosen = {parameter.pk for parameter in self.chosen}
+        return [(parameter, parameter.pk in chosen) for parameter in self.fields["parameters"].queryset]
 
     def point_groups(self):
         """[(zone, [(point, checked), …]), …] in the plant's order."""
@@ -137,16 +135,33 @@ class SeriesResult:
 
 
 @dataclass
+class UnitChart:
+    """The parameters of one unit: their chart and the statistics of their series."""
+
+    unit: str
+    parameters: list
+    results: list
+    chart: dict
+
+    @property
+    def several(self):
+        return len(self.parameters) > 1
+
+
+@dataclass
 class Exploration:
-    parameter: Parameter
+    parameters: list
     first_day: datetime.date
     last_day: datetime.date
     variables: list
     samples: dict  # {variable id: [Sample]}
-    results: list
-    chart: dict
+    charts: list  # [UnitChart], one per unit
     period: str | None
     automatic: bool
+
+    @property
+    def results(self):
+        return [result for chart in self.charts for result in chart.results]
 
     @property
     def period_name(self):
@@ -155,40 +170,52 @@ class Exploration:
 
 def explore(data):
     """The series and statistics of a valid ExplorerForm's cleaned_data."""
-    parameter, first_day, last_day = data["parameter"], data["start"], data["end"]
+    parameters, first_day, last_day = list(data["parameters"]), data["start"], data["end"]
     points = list(data["points"])  # in the plant's order: the queryset keeps the points' ordering
     variables = list(
-        Variable.objects.filter(parameter=parameter, point__in=points, source__in=data["sources"]).select_related("point", "source")
+        Variable.objects.filter(parameter__in=parameters, point__in=points, source__in=data["sources"])
+        .select_related("point", "source", "parameter")
     )
-    book = LimitBook(Limit.objects.filter(parameter=parameter, point__in=points).select_related("point", "parameter"))
+    limits = Limit.objects.filter(parameter__in=parameters, point__in=points).select_related("point", "parameter")
+    books = {parameter.pk: LimitBook([limit for limit in limits if limit.parameter_id == parameter.pk]) for parameter in parameters}
     samples = load_samples(variables, first_day, last_day)
     suspect = count_suspect(variables, first_day, last_day)
     colors = {point.pk: point_color(index) for index, point in enumerate(points)}
     shapes = source_shapes()
-    results = [
-        SeriesResult(
-            variable=variable,
-            color=colors[variable.point_id],
-            shape=shapes[variable.source_id][0],
-            description=describe(samples.get(variable.pk, [])),
-            exceedance=book.exceedance(variable.point_id, samples.get(variable.pk, [])),
-            suspect=suspect.get(variable.pk, 0),
-        )
-        for variable in variables
-    ]
     automatic = data["aggregation"] == AUTO
     if automatic:
         period = automatic_period(first_day, last_day)
     else:
         period = None if data["aggregation"] == RAW else data["aggregation"]
+
+    # One chart per unit, in the order the parameters come in.
+    units = {}
+    for parameter in parameters:
+        units.setdefault(parameter.unit, []).append(parameter)
+    charts = []
+    for unit, members in units.items():
+        order = [parameter.pk for parameter in members]
+        series = sorted((v for v in variables if v.parameter_id in order), key=lambda v: order.index(v.parameter_id))
+        results = [
+            SeriesResult(
+                variable=variable,
+                color=colors[variable.point_id],
+                shape=shapes[variable.source_id][0],
+                description=describe(samples.get(variable.pk, [])),
+                exceedance=books[variable.parameter_id].exceedance(variable.point_id, samples.get(variable.pk, [])),
+                suspect=suspect.get(variable.pk, 0),
+            )
+            for variable in series
+        ]
+        chart = chart_data(members, points, series, samples, books, first_day, last_day, period)
+        charts.append(UnitChart(unit=unit, parameters=members, results=results, chart=chart))
     return Exploration(
-        parameter=parameter,
+        parameters=parameters,
         first_day=first_day,
         last_day=last_day,
         variables=variables,
         samples=samples,
-        results=results,
-        chart=chart_data(parameter, points, variables, samples, book, first_day, last_day, period),
+        charts=charts,
         period=period,
         automatic=automatic,
     )

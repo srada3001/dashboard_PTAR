@@ -3,7 +3,8 @@
 The color tells the point and the marker's shape tells the source (docs/REQUISITOS.md §7.1). Point
 colors follow the order the points are given, so hiding a point never repaints the others; each
 source keeps its shape on every chart. The colors are the validated categorical order of the
-dataviz palette, eight at most.
+dataviz palette, eight at most. A chart may hold several parameters with the same unit (the
+explorer, §7.2): each one is drawn with its own line dash.
 """
 
 import calendar
@@ -23,6 +24,9 @@ SOURCE_SHAPES = [
     ("circle", "circle"), ("triangle", "triangle"), ("diamond", "diamond"), ("square", "rect"),
     ("down", "path://M0,0L10,0L5,10Z"),
 ]
+# Line dashes of the parameters of one chart, in order: solid, dotted, dash-dot, long dashes. The
+# limits are dashed [6, 4] and have no markers.
+PARAMETER_DASHES = [[], [2, 3], [9, 3, 2, 3], [14, 4]]
 PRECISION_CODES = {TimePrecision.HOUR: "h", TimePrecision.AM: "a", TimePrecision.PM: "p", TimePrecision.DAY: "d"}
 
 
@@ -55,9 +59,12 @@ def bounds_text(low, high, unit=""):
     return f"{format_number(low)} – {format_number(high)}{unit}"
 
 
-def limit_text(limit, first_day, last_day):
-    """'BA-4010 · Límite de vertimiento: ≤ 0,2 mg/L', with its dates when it does not cover the chart."""
+def limit_text(limit, first_day, last_day, with_parameter=False):
+    """'BA-4010 · Límite de vertimiento: ≤ 0,2 mg/L', with its dates when it does not cover the chart;
+    'Fenoles · BA-4010 · …' when the chart has several parameters."""
     text = f"{limit.point} · {limit.get_kind_display()}: {bounds_text(limit.min_value, limit.max_value, limit.parameter.unit)}"
+    if with_parameter:
+        text = f"{limit.parameter.code} · {text}"
     if limit.valid_from and limit.valid_from > first_day:
         text += f", desde el {limit.valid_from:%Y-%m-%d}"
     if limit.valid_to and limit.valid_to < last_day:
@@ -65,10 +72,13 @@ def limit_text(limit, first_day, last_day):
     return text
 
 
-def chart_data(parameter, points, variables, samples, limit_book, first_day, last_day, period=None):
-    """The chart of a parameter at some points (in color order), from `samples` ({variable id:
-    [Sample]}), with the limits in force between the two days. With a period, each series is
-    drawn as its daily, weekly or monthly means."""
+def chart_data(parameters, points, variables, samples, limit_books, first_day, last_day, period=None):
+    """The chart of some parameters with the same unit at some points (in color order), from
+    `samples` ({variable id: [Sample]}), with the limits in force between the two days
+    (`limit_books`: {parameter id: LimitBook}). With a period, each series is drawn as its daily,
+    weekly or monthly means."""
+    several = len(parameters) > 1
+    parameter_of = {parameter.pk: index for index, parameter in enumerate(parameters)}
     color_of = {point.pk: index for index, point in enumerate(points)}
     drawn = [variable for variable in variables if samples.get(variable.pk)]
     sources = [source for source in Source.objects.all() if any(v.source_id == source.pk for v in drawn)]
@@ -82,38 +92,46 @@ def chart_data(parameter, points, variables, samples, limit_book, first_day, las
             data = [[epoch(bucket.start), bucket.mean, bucket.n, bucket.qualified] for bucket in aggregate(rows, period)]
         else:
             data = [[epoch(s.taken_at), s.value, s.qualifier, PRECISION_CODES[s.precision]] for s in rows]
+        name = f"{variable.point} · {variable.source}"
         series.append({
-            "name": f"{variable.point} · {variable.source}",
+            "name": f"{variable.parameter.code} · {name}" if several else name,
+            "parameter": parameter_of[variable.parameter_id],
             "point": color_of[variable.point_id],
             "source": source_index[variable.source_id],
+            "decimals": variable.parameter.decimals,
             "data": data,
         })
 
     limits = []
-    for point in points:
-        for limit in limit_book.overlapping(point.pk, first_day, last_day):
-            start = max(limit.valid_from or first_day, first_day)
-            end = min(limit.valid_to or last_day, last_day) + datetime.timedelta(days=1)
-            limits.append({
-                "point": color_of[point.pk],
-                "color": point_color(color_of[point.pk]),
-                "text": limit_text(limit, first_day, last_day),
-                "values": [value for value in (limit.min_value, limit.max_value) if value is not None],
-                "from": epoch(start),
-                "to": epoch(end),
-            })
+    for parameter in parameters:
+        for point in points:
+            for limit in limit_books[parameter.pk].overlapping(point.pk, first_day, last_day):
+                start = max(limit.valid_from or first_day, first_day)
+                end = min(limit.valid_to or last_day, last_day) + datetime.timedelta(days=1)
+                limits.append({
+                    "parameter": parameter_of[parameter.pk],
+                    "point": color_of[point.pk],
+                    "color": point_color(color_of[point.pk]),
+                    "text": limit_text(limit, first_day, last_day, several),
+                    "values": [value for value in (limit.min_value, limit.max_value) if value is not None],
+                    "from": epoch(start),
+                    "to": epoch(end),
+                })
 
     with_data = {variable.point_id for variable in drawn}
     qualified = any(sample.qualifier for rows in samples.values() for sample in rows)
     return {
-        "unit": parameter.unit,
-        "decimals": parameter.decimals,
+        "unit": parameters[0].unit,
         "start": epoch(first_day),
         "end": epoch(last_day + datetime.timedelta(days=1)),
         "period": period,
         # A missing bucket breaks the line; raw series are broken by charts.js from their own rhythm.
         "gap": Period.LENGTH[period].total_seconds() * 1.5 if period else None,
         "qualified": qualified,
+        "parameters": [
+            {"code": parameter.code, "name": parameter.name, "dash": PARAMETER_DASHES[index % len(PARAMETER_DASHES)]}
+            for index, parameter in enumerate(parameters)
+        ],
         "points": [
             {"code": point.code, "color": point_color(color_of[point.pk]), "hasData": point.pk in with_data}
             for point in points

@@ -5,13 +5,24 @@
 {% block content %}
 <header class="encabezado">
   <h2>Explorador</h2>
-  <p class="ayuda">Un parámetro en uno o varios puntos y fuentes, con estadística descriptiva de cada serie.</p>
+  <p class="ayuda">Uno o varios parámetros en uno o varios puntos y fuentes, con estadística descriptiva de cada serie. Los parámetros con la misma unidad comparten gráfica.</p>
 </header>
 
 <form class="tarjeta explorador" method="get">
+  {# Checking a parameter brings the points and sources of the chosen ones, keeping the checked points. #}
+  <fieldset class="opciones{% if form.parameters.errors %} opciones--error{% endif %}"
+            hx-get="{{ form.options_url }}" hx-trigger="change" hx-target="#opciones" hx-include="[name=parameters], [name=points]">
+    <legend>Parámetros</legend>
+    {% for error in form.parameters.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    <div class="opciones__lista opciones__lista--rejilla">
+      {% for parameter, checked in form.parameter_options %}
+        <label class="casilla" title="{{ parameter.name }}{% if parameter.unit %} ({{ parameter.unit }}){% endif %}"><input type="checkbox" name="parameters" value="{{ parameter.pk }}"{% if checked %} checked{% endif %}> {{ parameter.code }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
   <div class="explorador__fila">
-    {% for field in form %}{% if field.name != "points" and field.name != "sources" %}
-      <div class="campo{% if field.errors %} campo--error{% endif %}{% if field.name == "parameter" %} campo--ancho{% endif %}">
+    {% for field in form %}{% if field.name != "parameters" and field.name != "points" and field.name != "sources" %}
+      <div class="campo{% if field.errors %} campo--error{% endif %}">
         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
         {% for error in field.errors %}<p class="error">{{ error }}</p>{% endfor %}
@@ -23,22 +34,33 @@
 </form>
 
 {% if exploration %}
-  {% with parameter=exploration.parameter decimals=exploration.parameter.decimals %}
-  <section class="tarjeta panel" aria-labelledby="resultado">
+  <section class="tarjeta panel resumen">
     <header class="panel__encabezado panel__encabezado--acciones">
-      <div>
-        <h3 id="resultado">{{ parameter.name }}</h3>
-        <p class="ayuda">
-          {% if parameter.code != parameter.name %}{{ parameter.code }} · {% endif %}{% if parameter.unit %}{{ parameter.unit }} · {% endif %}
-          del {{ exploration.first_day|date:"Y-m-d" }} al {{ exploration.last_day|date:"Y-m-d" }} ·
-          gráfica con {{ exploration.period_name }}{% if exploration.automatic %} (automático){% endif %}
-        </p>
-      </div>
+      <p class="ayuda">
+        Del {{ exploration.first_day|date:"Y-m-d" }} al {{ exploration.last_day|date:"Y-m-d" }} ·
+        {{ exploration.charts|length }} gráfica{{ exploration.charts|length|pluralize }} con {{ exploration.period_name }}{% if exploration.automatic %} (automático){% endif %}
+      </p>
       <a class="boton boton--secundario" href="{% url 'explorer_export' %}?{{ query }}">Exportar a Excel</a>
     </header>
+  </section>
 
-    {% if exploration.chart.series %}
-      {% include "dashboards/_chart.html" with chart=exploration.chart chart_id="grafica-explorador" title=parameter.name zoom=True %}
+  {% for unit_chart in exploration.charts %}
+  {% with n=forloop.counter|stringformat:"s" %}
+  <section class="tarjeta panel" aria-labelledby="resultado-{{ n }}">
+    <header class="panel__encabezado">
+      {% if unit_chart.several %}
+        <h3 id="resultado-{{ n }}">{% for parameter in unit_chart.parameters %}{{ parameter.code }}{% if not forloop.last %}, {% endif %}{% endfor %}</h3>
+        <p class="ayuda">{{ unit_chart.unit|default:"sin unidad" }} · {% for parameter in unit_chart.parameters %}{{ parameter.name }}{% if not forloop.last %}; {% endif %}{% endfor %}</p>
+      {% else %}
+        {% with parameter=unit_chart.parameters.0 %}
+        <h3 id="resultado-{{ n }}">{{ parameter.name }}</h3>
+        <p class="ayuda">{% if parameter.code != parameter.name %}{{ parameter.code }} · {% endif %}{{ parameter.unit|default:"sin unidad" }}</p>
+        {% endwith %}
+      {% endif %}
+    </header>
+
+    {% if unit_chart.chart.series %}
+      {% include "dashboards/_chart.html" with chart=unit_chart.chart chart_id="grafica-explorador-"|add:n title=unit_chart.parameters.0.name zoom=True group="explorador" %}
     {% else %}
       <p class="sin-datos">Sin datos en esas fechas.</p>
     {% endif %}
@@ -60,12 +82,12 @@
           </tr>
         </thead>
         <tbody>
-          {% for result in exploration.results %}
-            {% with d=result.description e=result.exceedance %}
+          {% for result in unit_chart.results %}
+            {% with d=result.description e=result.exceedance decimals=result.variable.parameter.decimals %}
             <tr>
               <th scope="row" class="serie">
                 <span class="forma forma--{{ result.shape }}" style="--color: {{ result.color }}" aria-hidden="true"></span>
-                {{ result.variable.point }} <span class="serie__fuente">{{ result.variable.source }}</span>
+                {% if unit_chart.several %}{{ result.variable.parameter.code }} · {% endif %}{{ result.variable.point }} <span class="serie__fuente">{{ result.variable.source }}</span>
                 {% if result.suspect %}<span class="cuando">{{ result.suspect }} dudoso{{ result.suspect|pluralize }} sin revisar, excluido{{ result.suspect|pluralize }}</span>{% endif %}
               </th>
               {% if d.n %}
@@ -90,21 +112,24 @@
             </tr>
             {% endwith %}
           {% empty %}
-            <tr><td colspan="10" class="sin-datos">Ninguno de esos puntos tiene ese parámetro con esas fuentes.</td></tr>
+            <tr><td colspan="10" class="sin-datos">Ninguno de esos puntos tiene {% if unit_chart.several %}esos parámetros{% else %}ese parámetro{% endif %} con esas fuentes.</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-    <p class="ayuda panel__pie">
-      La estadística usa las mediciones sin agregar. Los valores con «&lt;» o «&gt;» cuentan como su número (el peor caso)
-      y los dudosos del histórico quedan fuera. Desviación estándar muestral; percentiles con interpolación, como PERCENTIL.INC de Excel.
-      «Fuera de límite» compara cada muestra con los límites vigentes en su fecha.
-    </p>
+    {% if forloop.last %}
+      <p class="ayuda panel__pie">
+        La estadística usa las mediciones sin agregar. Los valores con «&lt;» o «&gt;» cuentan como su número (el peor caso)
+        y los dudosos del histórico quedan fuera. Desviación estándar muestral; percentiles con interpolación, como PERCENTIL.INC de Excel.
+        «Fuera de límite» compara cada muestra con los límites vigentes en su fecha.
+      </p>
+    {% endif %}
   </section>
   {% endwith %}
+  {% endfor %}
 {% elif not form.is_bound %}
   <section class="tarjeta vacio">
-    <p>Elige un parámetro, los puntos y las fechas.</p>
+    <p>Elige uno o varios parámetros, los puntos y las fechas.</p>
     <p class="ayuda">Por ejemplo, los fenoles en BA-4001, BA-4008 y BA-4010 para comparar la entrada, el biorreactor y la salida.</p>
   </section>
 {% endif %}

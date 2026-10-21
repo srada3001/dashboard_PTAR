@@ -5,8 +5,10 @@
    - a value that does not exist leaves a gap: the line breaks where a series goes longer than
      usual without data (three times its usual step, and at least a day), or where a day, week
      or month of means is missing;
+   - with several parameters (the explorer), each one has its own line dash;
    - dashed lines are the limits, each in its point's color, only while they are in force;
-   - the buttons above hide and show points and sources; the scale can be logarithmic.
+   - the buttons above hide and show parameters, points and sources;
+   - charts of the same data-group zoom together.
    Times arrive as Bogotá's wall clock in UTC seconds and the chart draws in UTC, so it shows
    Bogotá's hours whatever the browser's time zone. */
 
@@ -71,29 +73,30 @@
     constructor(figure) {
       this.figure = figure;
       this.data = JSON.parse(document.getElementById(figure.dataset.chart).textContent);
+      this.hiddenParameters = new Set();
       this.hiddenPoints = new Set();
       this.hiddenSources = new Set();
-      this.log = false;
+      this.drawn = []; // the series on the chart, in ECharts' order (limits come after them)
       this.canvas = figure.querySelector("[data-canvas]");
-      this.logNote = figure.querySelector("[data-log-note]");
       this.chart = echarts.init(this.canvas, null, { locale: "ES", renderer: "canvas" });
+      if (figure.dataset.group) {
+        this.chart.group = figure.dataset.group;
+        echarts.connect(figure.dataset.group);
+      }
       new ResizeObserver(() => this.chart.resize()).observe(this.canvas);
       this.listen();
       this.draw();
     }
 
     listen() {
+      this.figure.querySelectorAll("[data-parameter]").forEach((button) => {
+        button.addEventListener("click", () => this.toggle(button, this.hiddenParameters, Number(button.dataset.parameter)));
+      });
       this.figure.querySelectorAll("[data-point]").forEach((button) => {
         button.addEventListener("click", () => this.toggle(button, this.hiddenPoints, Number(button.dataset.point)));
       });
       this.figure.querySelectorAll("[data-source]").forEach((button) => {
         button.addEventListener("click", () => this.toggle(button, this.hiddenSources, Number(button.dataset.source)));
-      });
-      const log = this.figure.querySelector("[data-log]");
-      log.addEventListener("click", () => {
-        this.log = !this.log;
-        log.setAttribute("aria-pressed", String(this.log));
-        this.draw();
       });
     }
 
@@ -105,7 +108,7 @@
     }
 
     visible(series) {
-      return !this.hiddenPoints.has(series.point) && !this.hiddenSources.has(series.source);
+      return !this.hiddenParameters.has(series.parameter) && !this.hiddenPoints.has(series.point) && !this.hiddenSources.has(series.source);
     }
 
     /** ECharts data items of a series, with null items where the line must break. */
@@ -114,13 +117,8 @@
       const limit = gapLimit(series.data, gap);
       const items = [];
       let previous = null;
-      let dropped = 0;
       for (const row of series.data) {
         const [t, value] = row;
-        if (this.log && value <= 0) {
-          dropped++;
-          continue;
-        }
         if (previous !== null && t - previous > limit) items.push({ value: [(previous + t) * 500, null] });
         const qualified = period ? row[3] > 0 : row[2] !== "";
         const item = { value: [t * 1000, value], row };
@@ -131,11 +129,12 @@
         items.push(item);
         previous = t;
       }
-      return { items, dropped };
+      return items;
     }
 
     tooltip(params) {
-      const { decimals, unit, period } = this.data;
+      const { unit, period } = this.data;
+      const { decimals } = this.drawn[params.seriesIndex];
       const row = params.data.row;
       const name = `<span style="color:${params.color}">●</span> ${escape(params.seriesName)}`;
       const units = unit ? ` ${escape(unit)}` : "";
@@ -149,14 +148,13 @@
     }
 
     draw() {
-      const { points, sources, limits, start, end, unit, decimals } = this.data;
+      const { parameters, points, sources, limits, start, end, unit } = this.data;
       const series = [];
-      let dropped = 0;
-      for (const s of this.data.series) {
-        if (!this.visible(s)) continue;
+      this.drawn = this.data.series.filter((s) => this.visible(s));
+      for (const s of this.drawn) {
         const color = points[s.point].color;
-        const { items, dropped: lost } = this.items(s, color);
-        dropped += lost;
+        const dash = parameters[s.parameter].dash;
+        const items = this.items(s, color);
         const many = items.length > MANY;
         series.push({
           type: "line",
@@ -168,16 +166,15 @@
           sampling: many ? "lttb" : undefined,
           connectNulls: false,
           color,
-          lineStyle: { width: 1.5, color, opacity: 0.85 },
+          lineStyle: { width: 1.5, color, opacity: 0.85, type: dash.length ? dash : "solid" },
           emphasis: { focus: "series", lineStyle: { width: 2 } },
           animation: false,
           z: 2,
         });
       }
       for (const limit of limits) {
-        if (this.hiddenPoints.has(limit.point)) continue;
+        if (this.hiddenPoints.has(limit.point) || this.hiddenParameters.has(limit.parameter)) continue;
         for (const value of limit.values) {
-          if (this.log && value <= 0) continue;
           series.push({
             type: "line",
             name: limit.text,
@@ -191,11 +188,6 @@
           });
         }
       }
-
-      this.logNote.hidden = !dropped;
-      this.logNote.textContent = dropped
-        ? `${dropped} valor${dropped === 1 ? "" : "es"} en cero o negativo${dropped === 1 ? "" : "s"} no se ve${dropped === 1 ? "" : "n"} en escala logarítmica.`
-        : "";
 
       const zoom = "zoom" in this.figure.dataset;
       this.chart.setOption({
@@ -219,10 +211,12 @@
           axisTick: { lineStyle: { color: INK.axis } },
           axisLabel: { color: INK.soft, hideOverlap: true },
           splitLine: { show: false },
-          axisPointer: { show: true, type: "line", lineStyle: { color: INK.faint }, label: { show: false } },
+          // Only a guide line: if it also triggered the (per item) tooltip, ECharts would call the
+          // formatter without an item after each redraw, and the redraw would stop there.
+          axisPointer: { show: true, type: "line", triggerTooltip: false, lineStyle: { color: INK.faint }, label: { show: false } },
         },
         yAxis: {
-          type: this.log ? "log" : "value",
+          type: "value",
           scale: true,
           name: unit,
           nameTextStyle: { color: INK.soft, align: "left" },

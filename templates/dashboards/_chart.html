@@ -1,11 +1,21 @@
 {% comment %}
 A chart drawn by static/js/charts.js from the data in the <script> that follows it
-(apps/dashboards/charts.py). Color: the point; marker shape: the source. The buttons hide and
-show points and sources; the table next to the chart holds the same series as numbers.
-Context: chart, chart_id, title, zoom (optional).
+(apps/dashboards/charts.py). Color: the point; marker shape: the source; line dash: the parameter,
+when there are several. The buttons hide and show parameters, points and sources; the table next
+to the chart holds the same series as numbers.
+Context: chart, chart_id, title, zoom (optional), group (optional: charts that zoom together).
 {% endcomment %}
-<figure class="grafica" data-chart="{{ chart_id }}"{% if zoom %} data-zoom{% endif %}>
+<figure class="grafica" data-chart="{{ chart_id }}"{% if zoom %} data-zoom{% endif %}{% if group %} data-group="{{ group }}"{% endif %}>
   <div class="grafica__controles">
+    {% if chart.parameters|length > 1 %}
+      <div class="leyenda" role="group" aria-label="Parámetros">
+        {% for parameter in chart.parameters %}
+          <button type="button" class="ficha" data-parameter="{{ forloop.counter0 }}" aria-pressed="true" title="{{ parameter.name }}">
+            <svg class="trazo" width="22" height="4" aria-hidden="true"><line x1="0" y1="2" x2="22" y2="2" stroke-dasharray="{{ parameter.dash|join:' ' }}"/></svg>{{ parameter.code }}
+          </button>
+        {% endfor %}
+      </div>
+    {% endif %}
     <div class="leyenda" role="group" aria-label="Puntos">
       {% for point in chart.points %}
         <button type="button" class="ficha" data-point="{{ forloop.counter0 }}" aria-pressed="true"
@@ -27,16 +37,14 @@ Context: chart, chart_id, title, zoom (optional).
         <p class="leyenda__fuente"><span class="forma forma--{{ source.shape }}" aria-hidden="true"></span>{{ source.code }}</p>
       {% endfor %}
     {% endif %}
-    <button type="button" class="ficha ficha--escala" data-log aria-pressed="false">Escala logarítmica</button>
   </div>
-  <div class="grafica__lienzo" data-canvas role="img" aria-label="Gráfica de {{ title }}{% if chart.unit %} en {{ chart.unit }}{% endif %}; los valores están en la tabla."></div>
+  <div class="grafica__lienzo" data-canvas role="img" aria-label="Gráfica de {% if chart.parameters|length > 1 %}{% for parameter in chart.parameters %}{{ parameter.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ title }}{% endif %}{% if chart.unit %} en {{ chart.unit }}{% endif %}; los valores están en la tabla."></div>
   <figcaption class="grafica__notas">
     {% for limit in chart.limits %}
       <span class="nota"><span class="nota__limite" style="--color: {{ limit.color }}"></span>{{ limit.text }}</span>
     {% endfor %}
     {% if chart.qualified %}<span class="nota"><span class="forma forma--circle forma--vacia" aria-hidden="true"></span>Marcador vacío: {% if chart.period %}incluye valores{% else %}valor{% endif %} con «&lt;» o «&gt;»</span>{% endif %}
     {% if chart.period == "day" %}<span class="nota">Promedios diarios</span>{% elif chart.period == "week" %}<span class="nota">Promedios semanales</span>{% elif chart.period == "month" %}<span class="nota">Promedios mensuales</span>{% endif %}
-    <span class="nota" data-log-note hidden></span>
   </figcaption>
 </figure>
 {{ chart|json_script:chart_id }}
