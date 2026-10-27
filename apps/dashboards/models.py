@@ -3,7 +3,7 @@ a chart needs no programming (CLAUDE.md)."""
 
 from django.db import models
 
-from apps.catalog.models import Parameter, SamplingPoint
+from apps.catalog.models import Parameter, SamplingPoint, Variable
 
 # One color per point on a chart; past eight, colors can no longer be told apart.
 MAX_POINTS = 8
@@ -32,3 +32,40 @@ class ImportantVariable(models.Model):
 
     def __str__(self):
         return self.parameter.name
+
+
+class WeeklyChart(models.Model):
+    """One chart of «ICAV» (docs/REQUISITOS.md §7.3): chosen variables, one value per day of a week
+    from Monday to Sunday."""
+
+    title = models.CharField("título", max_length=120, unique=True)
+    order = models.PositiveSmallIntegerField("orden", default=0, help_text="Orden en que se presentan.")
+
+    class Meta:
+        verbose_name = "gráfica del ICAV"
+        verbose_name_plural = "gráficas del ICAV"
+        ordering = ["order", "pk"]
+
+    def __str__(self):
+        return self.title
+
+
+class WeeklyChartVariable(models.Model):
+    chart = models.ForeignKey(WeeklyChart, on_delete=models.CASCADE, related_name="items", verbose_name="gráfica")
+    variable = models.ForeignKey(Variable, on_delete=models.PROTECT, related_name="+", verbose_name="variable")
+    order = models.PositiveSmallIntegerField("orden", default=0)
+
+    class Meta:
+        verbose_name = "serie de la gráfica"
+        verbose_name_plural = "series de la gráfica"
+        ordering = ["order", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["chart", "variable"],
+                name="weeklychartvariable_unique",
+                violation_error_message="La variable ya está en la gráfica.",
+            ),
+        ]
+
+    def __str__(self):
+        return str(self.variable)

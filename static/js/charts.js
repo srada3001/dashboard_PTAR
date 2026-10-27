@@ -8,7 +8,8 @@
    - with several parameters (the explorer), each one has its own line dash;
    - dashed lines are the limits, each in its point's color, only while they are in force;
    - the buttons above hide and show parameters, points and sources;
-   - charts of the same data-group zoom together.
+   - charts of the same data-group zoom together;
+   - a data-image button downloads what is visible as a PNG, with a title and a legend.
    Times arrive as Bogotá's wall clock in UTC seconds and the chart draws in UTC, so it shows
    Bogotá's hours whatever the browser's time zone. */
 
@@ -19,6 +20,7 @@
   const FONT = '"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif';
   const DAY = 86400;
   const MANY = 3000; // past this, a series is drawn without markers
+  const WEEKDAYS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
   const MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
     "septiembre", "octubre", "noviembre", "diciembre"];
 
@@ -98,6 +100,9 @@
       this.figure.querySelectorAll("[data-source]").forEach((button) => {
         button.addEventListener("click", () => this.toggle(button, this.hiddenSources, Number(button.dataset.source)));
       });
+      this.figure.querySelectorAll("[data-image]").forEach((button) => {
+        button.addEventListener("click", () => this.download(button));
+      });
     }
 
     toggle(button, hidden, index) {
@@ -148,6 +153,43 @@
     }
 
     draw() {
+      this.chart.setOption(this.option(), { replaceMerge: ["series", "dataZoom"] });
+    }
+
+    /** The visible series as a PNG, with a title and a legend, for a report (the ICAV charts). */
+    download(button) {
+      const box = document.createElement("div");
+      box.style.cssText = "position: fixed; left: -10000px; top: 0; width: 1100px; height: 620px;";
+      document.body.appendChild(box);
+      const chart = echarts.init(box, null, { locale: "ES", renderer: "canvas" });
+      const option = this.option();
+      const names = this.drawn.map((s) => s.name);
+      const limits = [...new Set(this.data.limits.filter((l) => !this.hiddenPoints.has(l.point)).map((l) => l.text))];
+      const rows = Math.ceil(names.length / 4);
+      option.title = {
+        text: button.dataset.imageTitle,
+        subtext: [...limits, this.data.period === "day" ? "Promedios diarios" : ""].filter(Boolean).join(" · "),
+        left: 16,
+        top: 10,
+        textStyle: { fontFamily: FONT, fontSize: 16, fontWeight: 600, color: INK.text },
+        subtextStyle: { fontFamily: FONT, fontSize: 12, color: INK.soft },
+      };
+      option.legend = {
+        data: names, left: 16, right: 16, bottom: 10, itemWidth: 24, itemGap: 16,
+        textStyle: { fontFamily: FONT, fontSize: 12, color: INK.text },
+      };
+      option.grid = { ...option.grid, left: 16, right: 24, top: 100, bottom: 24 + rows * 24 };
+      option.dataZoom = [];
+      chart.setOption(option);
+      const link = document.createElement("a");
+      link.href = chart.getDataURL({ type: "png", pixelRatio: 2, backgroundColor: "#ffffff" });
+      link.download = button.dataset.image;
+      link.click();
+      chart.dispose();
+      box.remove();
+    }
+
+    option() {
       const { parameters, points, sources, limits, start, end, unit } = this.data;
       const series = [];
       this.drawn = this.data.series.filter((s) => this.visible(s));
@@ -190,7 +232,7 @@
       }
 
       const zoom = "zoom" in this.figure.dataset;
-      this.chart.setOption({
+      return {
         useUTC: true,
         animation: false,
         textStyle: { fontFamily: FONT, color: INK.text },
@@ -209,7 +251,13 @@
           max: end * 1000,
           axisLine: { lineStyle: { color: INK.axis } },
           axisTick: { lineStyle: { color: INK.axis } },
-          axisLabel: { color: INK.soft, hideOverlap: true },
+          // A week (the ICAV charts): one label per day, with its weekday.
+          minInterval: this.data.days ? DAY * 1000 : undefined,
+          axisLabel: {
+            color: INK.soft,
+            hideOverlap: true,
+            formatter: this.data.days ? (v) => `${WEEKDAYS[new Date(v).getUTCDay()]} ${new Date(v).getUTCDate()}` : undefined,
+          },
           splitLine: { show: false },
           // Only a guide line: if it also triggered the (per item) tooltip, ECharts would call the
           // formatter without an item after each redraw, and the redraw would stop there.
@@ -226,7 +274,7 @@
         },
         dataZoom: zoom ? [{ type: "slider", height: 20, bottom: 8, labelFormatter: (v) => dayText(v / 1000), borderColor: INK.axis }] : [],
         series,
-      }, { replaceMerge: ["series", "dataZoom"] });
+      };
     }
   }
 

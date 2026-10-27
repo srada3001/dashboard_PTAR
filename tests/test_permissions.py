@@ -5,7 +5,7 @@ from django.urls import reverse
 
 pytestmark = pytest.mark.django_db
 
-READING_PAGES = ["important_variables", "explorer"]
+READING_PAGES = ["important_variables", "explorer", "weekly_charts", "weekly_charts_export"]
 
 
 class TestHome:
@@ -27,7 +27,7 @@ class TestCapturerReadsNothing:
     def test_menu_only_shows_capture(self, capturer_client):
         page = capturer_client.get(reverse("capture_index")).content.decode()
         assert "Captura" in page
-        assert "Variables importantes" not in page and "Explorador" not in page and "Administración" not in page
+        assert "Variables importantes" not in page and "Explorador" not in page and "ICAV" not in page and "Administración" not in page
 
     def test_sees_only_their_forms(self, capturer, capturer_client, biota_form, nalco_form):
         capturer.capture_forms.set([biota_form])

@@ -313,6 +313,7 @@ p.sin-datos { margin: 8px 0 12px; }
 .grafica__controles { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 6px; }
 .grafica__lienzo { height: 320px; }
 .grafica__notas { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 4px; }
+.boton--imagen { margin-left: auto; padding: 6px 12px; font-size: 13px; }
 
 @media (max-width: 720px) {
   .grafica__lienzo { height: 260px; }

@@ -10,6 +10,7 @@
 - Fase 1 (importación del histórico) implementada: mediciones con historial, catálogo inicial, mapeos e importación con informe. El histórico (unas 636.000 mediciones) está importado en la base local; falta revisar el informe y llevar la base a producción con `scripts/gcp/replace-db.sh` (decidido: la base local reemplaza la de producción).
 - Fase 2 (variables importantes y explorador) implementada y desplegada. Los puntos de cada variable importante son datos (admin); la configuración inicial la crea la migración `dashboards/0002`. Solo hay un límite cargado (fenoles en BA-4010); los demás de §8 los carga el administrador.
 - Fase 3 (captura, historial y exportaciones) implementada; las decisiones del 2026-10-20 están en §15. Los formatos iniciales los crea la migración `catalog/0004` desde `import_maps/` (solo variables con datos desde octubre de 2025).
+- Fase 4 (gráficas del ICAV, §7.3) implementada: las 8 gráficas semanales de «Graficas» de la tabla 2, de lunes a domingo; la migración `dashboards/0004` crea la configuración inicial. La calificación del ICAV sigue pendiente (§15, pendiente 11).
 
 ## Stack
 - Igual que Avante (`../avante`), que es la referencia de cómo se hace todo:
@@ -97,11 +98,12 @@
 - `apps/capture`: página **Captura** (§6).
   - `grid.py`: las celdas de cada variable según su frecuencia (`slots_of`), quién puede cambiar un valor (`may_change`: el capturista, solo lo suyo de las últimas 24 horas) y la rejilla de un formato para un día (`build`).
   - `views.py`: la rejilla, guardar una celda (`save_cell`, responde JSON: guardado, inválido, pide confirmar, conflicto…) y su historial. `static/js/capture.js` maneja el teclado, las confirmaciones con motivo y la barra de la celda.
-- `apps/dashboards`: **Variables importantes** y **Explorador** (§7).
+- `apps/dashboards`: **Variables importantes**, **Explorador** e **ICAV** (§7).
   - `ImportantVariable`: un parámetro y sus puntos (hasta 8, `MAX_POINTS`), en el admin.
   - `stats.py`: muestras (sin dudosos), ventanas por días calendario, estadística descriptiva, límites con vigencia (`LimitBook`) y agregación.
   - `charts.py`: los datos de cada gráfica (color = punto, forma = fuente, límites, horas de Bogotá); `static/js/charts.js` las dibuja.
   - `panels.py` (tarjetas de variables importantes), `explorer.py` (formulario y series) y `export.py` (Excel del explorador).
+  - `WeeklyChart` y `WeeklyChartVariable`: las gráficas del ICAV, una lista de variables con la misma unidad (hasta 8 puntos), en el admin. `weekly.py`: la semana de lunes a domingo, los promedios diarios, la tabla y el Excel (una hoja por gráfica). `charts.js` descarga cada gráfica como PNG con título y leyenda.
 - `apps/measurements`: `Measurement` (formato largo; `time_precision`: hora exacta, a. m., p. m. o solo el día; `taken_at` es el inicio del periodo cuando no hay hora), `MeasurementHistory` (nunca se borra), `values.py` (qué es un valor: `parse_value`, rangos) y `records.py` (crear, corregir y borrar con historial; `version` detecta cambios de otra persona). En el admin, solo lectura: se corrige desde la captura.
 - `apps/imports`: `ImportBatch` (con conteos e informe), `maps.py` (lee `import_maps/`), `catalog.py` (crea el catálogo inicial que falte), `workbook.py` (busca las tablas de Excel en el XML del libro y lee valores y fórmulas), `timeline.py` (redondeo y deducción de horas por la secuencia), `importer.py` y el comando `import_history`.
 - `apps/exports`: página **Exportaciones** (§10): a demanda (larga o ancha por fuente, hasta 100.000 mediciones) y el archivo semanal (`WeeklyExport`, `weekly.py`), que `WeeklyExportMiddleware` dispara en segundo plano con la primera visita después del lunes. `workbook.py` escribe los Excel; `storage.py` los guarda en el bucket (`EXPORTS_BUCKET`) o en `exports/` en local.

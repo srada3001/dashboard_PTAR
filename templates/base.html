@@ -28,12 +28,13 @@
   </header>
 
   {% if user.is_authenticated and not user.must_change_password %}
-    {% url 'important_variables' as important_url %}{% url 'explorer' as explorer_url %}{% url 'exports' as exports_url %}{% url 'capture_index' as capture_url %}
+    {% url 'important_variables' as important_url %}{% url 'explorer' as explorer_url %}{% url 'weekly_charts' as weekly_url %}{% url 'exports' as exports_url %}{% url 'capture_index' as capture_url %}
     <nav class="menu" aria-label="Secciones">
       <div class="menu__secciones">
         {% if user.can_read %}
           <a href="{{ important_url }}"{% if request.path == important_url %} aria-current="page"{% endif %}>Variables importantes</a>
           <a href="{{ explorer_url }}"{% if request.path == explorer_url %} aria-current="page"{% endif %}>Explorador</a>
+          <a href="{{ weekly_url }}"{% if request.path == weekly_url %} aria-current="page"{% endif %}>ICAV</a>
           <a href="{{ exports_url }}"{% if request.path == exports_url %} aria-current="page"{% endif %}>Exportaciones</a>
         {% endif %}
         {% if user.can_capture %}

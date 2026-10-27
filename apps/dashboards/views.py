@@ -15,7 +15,7 @@ from apps.exports.templatetags.exports import thousands
 from apps.exports.views import MAX_AT_ONCE
 from apps.measurements.models import Measurement
 
-from . import export
+from . import export, weekly
 from .explorer import ExplorerForm, ParameterBlockForm, chosen_variables, explore
 from .models import MAX_POINTS
 from .panels import CHART_DAYS, DAILY_MEANS_FROM, DEFAULT_CHART_DAYS, build_cards
@@ -101,3 +101,37 @@ def explorer_export(request):
         return redirect(f"{reverse('explorer')}?{request.GET.urlencode()}")
     exploration = explore(form)
     return FileResponse(export.workbook(exploration), as_attachment=True, filename=export.filename(exploration))
+
+
+def chosen_week(request):
+    """The Monday of the week asked (any of its days, `semana`), else of the last week that is over."""
+    today = timezone.localdate()
+    try:
+        day = datetime.date.fromisoformat(request.GET.get("semana", ""))
+    except ValueError:
+        return weekly.last_full_week(today)
+    return weekly.monday_of(min(day, today))
+
+
+@reader_required
+def weekly_charts(request):
+    """The weekly charts of the ICAV report, from Monday to Sunday (docs/REQUISITOS.md §7.3)."""
+    monday = chosen_week(request)
+    today = timezone.localdate()
+    next_monday = monday + weekly.WEEK
+    return render(request, "dashboards/weekly.html", {
+        "monday": monday,
+        "sunday": monday + datetime.timedelta(days=6),
+        "previous_monday": monday - weekly.WEEK,
+        "next_monday": next_monday if next_monday <= today else None,
+        "last_full": weekly.last_full_week(today),
+        "today": today,
+        "panels": weekly.build_panels(monday),
+    })
+
+
+@reader_required
+def weekly_charts_export(request):
+    """The week's charts as an Excel workbook: one sheet per chart, the daily means."""
+    monday = chosen_week(request)
+    return FileResponse(weekly.workbook(weekly.build_panels(monday), monday), as_attachment=True, filename=weekly.filename(monday))

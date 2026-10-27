@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load dashboards %}
+{% block title %}ICAV{% endblock %}
+{% block scripts %}{% include "dashboards/_chart_scripts.html" %}{% endblock %}
+{% block content %}
+<header class="encabezado">
+  <h2>Gráficas del ICAV</h2>
+  <p class="ayuda">Las gráficas semanales del informe ICAV, de lunes a domingo: el promedio de cada día en cada serie (punto y fuente).</p>
+</header>
+
+<form class="filtros filtros--fecha" method="get" data-autosubmit>
+  <a class="boton boton--secundario" href="?semana={{ previous_monday|date:'Y-m-d' }}" aria-label="Semana anterior">←</a>
+  <div class="campo">
+    <label for="semana">Semana (cualquier día)</label>
+    <input id="semana" type="date" name="semana" value="{{ monday|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}" required>
+  </div>
+  {% if next_monday %}<a class="boton boton--secundario" href="?semana={{ next_monday|date:'Y-m-d' }}" aria-label="Semana siguiente">→</a>{% endif %}
+  {% if monday != last_full %}<a class="enlace-hoy" href="?">Última semana completa</a>{% endif %}
+  <noscript><button type="submit" class="boton boton--secundario">Ver</button></noscript>
+</form>
+
+<section class="tarjeta panel resumen">
+  <header class="panel__encabezado panel__encabezado--acciones">
+    <p class="ayuda">
+      Del lunes {{ monday|date:"Y-m-d" }} al domingo {{ sunday|date:"Y-m-d" }}{% if sunday > today %} · semana en curso, con datos hasta hoy{% endif %}
+      · {{ panels|length }} gráfica{{ panels|length|pluralize }}
+    </p>
+    {% if panels %}<a class="boton boton--secundario" href="{% url 'weekly_charts_export' %}?semana={{ monday|date:'Y-m-d' }}">Exportar a Excel</a>{% endif %}
+  </header>
+</section>
+
+{% for panel in panels %}
+  {% with decimals=panel.decimals %}
+  <section class="tarjeta panel" aria-labelledby="icav-{{ panel.item.pk }}">
+    <header class="panel__encabezado">
+      <h3 id="icav-{{ panel.item.pk }}">{{ panel.item.title }}</h3>
+      {% if panel.chart %}
+        <p class="ayuda">{{ panel.chart.unit|default:"sin unidad" }}{% if panel.chart.parameters|length > 1 %} · {% for parameter in panel.chart.parameters %}{{ parameter.name }}{% if not forloop.last %}; {% endif %}{% endfor %}{% endif %}</p>
+      {% endif %}
+    </header>
+
+    {% if panel.columns %}
+      {% include "dashboards/_chart.html" with chart=panel.chart chart_id=panel.chart_id title=panel.item.title image=panel.image_name image_title=panel.image_title %}
+
+      <div class="tabla-desplazable">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Día</th>
+              {% for column in panel.columns %}
+                <th scope="col" class="num">
+                  <span class="forma forma--{{ column.shape }}" style="--color: {{ column.color }}" aria-hidden="true"></span>
+                  {{ column.name }}
+                </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for day, buckets in panel.rows %}
+              <tr>
+                <th scope="row">{{ day|date:"D" }} {{ day|date:"Y-m-d" }}</th>
+                {% for bucket in buckets %}
+                  {% if bucket %}
+                    <td class="num" title="{{ bucket.n }} muestra{{ bucket.n|pluralize }}{% if bucket.qualified %}, {{ bucket.qualified }} con «&lt;» o «&gt;»{% endif %}">{{ bucket.mean|num:decimals }}{% if bucket.qualified %}*{% endif %}</td>
+                  {% else %}
+                    <td class="num sin-datos">—</td>
+                  {% endif %}
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if panel.chart.qualified %}<p class="ayuda panel__pie">* El promedio incluye valores con «&lt;» o «&gt;».</p>{% endif %}
+    {% elif panel.item.items.all %}
+      <p class="sin-datos">Sin datos en la semana.</p>
+    {% else %}
+      <p class="sin-datos">No tiene series configuradas.</p>
+    {% endif %}
+
+    {% if panel.stale and panel.columns %}
+      <p class="ayuda panel__pie">
+        Sin datos en la semana:
+        {% for variable in panel.stale %}{{ variable.point }} · {% if panel.chart.parameters|length > 1 %}{{ variable.parameter.code }} · {% endif %}{{ variable.source }}{% if not forloop.last %}; {% endif %}{% endfor %}.
+      </p>
+    {% endif %}
+  </section>
+  {% endwith %}
+{% empty %}
+  <section class="tarjeta vacio">
+    <p>No hay gráficas del ICAV configuradas.</p>
+    {% if user.is_admin %}
+      <p class="ayuda">Se definen en <a href="{% url 'admin:dashboards_weeklychart_changelist' %}">Administración → Vistas → Gráficas del ICAV</a>.</p>
+    {% else %}
+      <p class="ayuda">Pídele al administrador que las configure.</p>
+    {% endif %}
+  </section>
+{% endfor %}
+
+<p class="ayuda pie">
+  Cada valor es el promedio de las mediciones del día. Los valores con «&lt;» o «&gt;» cuentan como su número, el peor caso: «&lt;0,1» como 0,1.
+  Los valores dudosos del histórico no se grafican ni entran en los promedios hasta que alguien los revise.
+  Las líneas punteadas son los límites vigentes de cada punto. La calificación de la semana del ICAV todavía no está en la app.
+</p>
+{% endblock %}

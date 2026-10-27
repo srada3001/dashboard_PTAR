@@ -1,7 +1,7 @@
 # Dashboard PTAR — Requisitos y lineamientos
 
 > Documento vivo. Cuando una decisión cambie, se actualiza aquí primero.
-> Última actualización: 2026-10-20. Hay decisiones abiertas (§15); lo que dependa de ellas está marcado como **pendiente**.
+> Última actualización: 2026-10-26. Hay decisiones abiertas (§15); lo que dependa de ellas está marcado como **pendiente**.
 
 ## 1. Contexto y objetivo
 
@@ -64,12 +64,13 @@ Las equivalencias entre nombres de fuentes distintas están pendientes (§15). P
   - de la tabla 2, las hojas «Datos LABORATORIO», «FASE I», «A.AGRIAS SEP.», «K-SODAS», «BR 4081», «DIAPAC» y «ECODIESEL».
 - Vista de **variables importantes** (§7.1).
 - **Explorador de series** con estadística descriptiva (§7.2).
+- **Gráficas del ICAV:** las gráficas semanales del informe, de lunes a domingo (§7.3).
 - **Captura manual** validada, por formatos (§6). Al inicio todas las entradas son manuales.
 - Historial de cambios de cada medición.
 - Respaldo continuo y exportación a Excel (§10).
 
 ### Fuera de alcance en v1 (fases posteriores)
-- **Análisis semanal automático** (ICAV, §8). Sus reglas están por definir.
+- **Análisis semanal automático** (la calificación del ICAV, §8). Sus reglas están por definir. Las gráficas del ICAV sí están en la versión 1 (§7.3).
 - Consulta directa de la base de Labviewer.
 - Lectura automática desde PI, empezando por los flujos de BA4005C/D.
 - Carga desde archivos y otros formatos (por ejemplo, los que envía BIOTA).
@@ -80,7 +81,7 @@ Las equivalencias entre nombres de fuentes distintas están pendientes (§15). P
 El modelo de datos debe permitir añadir estas fases sin rehacerlo.
 
 **Hojas que no se migran:**
-- Las tablas dinámicas y las gráficas (pH, G&A, SST, °T, NTU, Fe, Graficas, GyA, Solidos, Nitrógeno, Fenol, Fenol AA, Sulfatos PTAR, Sulfatos SEP, Aguas Agrias): las reemplazan las vistas de la app.
+- Las tablas dinámicas y las gráficas (pH, G&A, SST, °T, NTU, Fe, Graficas, GyA, Solidos, Nitrógeno, Fenol, Fenol AA, Sulfatos PTAR, Sulfatos SEP, Aguas Agrias): las reemplazan las vistas de la app. Las de «Graficas» de la tabla 2 son las del ICAV (§7.3).
 - «Hoja4» y «Rangos ICAV»: son un ejemplo antiguo que ya no funciona; sus reglas y sus valores **no se toman como referencia**.
 - «Radios»: fuera de alcance.
 
@@ -239,6 +240,35 @@ Gráficas con ECharts, como el dashboard U044.
   - Solo cambia lo que dibuja la gráfica. Automática: sin agregar hasta 3 meses, promedios diarios hasta 3 años y semanales para más; se puede elegir otra.
 - Exportar a Excel lo que se está viendo, todos los parámetros en el mismo libro: hoja «Estadística», hoja «Mediciones» (formato largo: fecha, hora, punto, parámetro, fuente, calificador, valor, unidad y quién la registró) y, si la gráfica es de promedios, una hoja con ellos. Sin los dudosos.
 
+### 7.3 Gráficas del ICAV
+Las gráficas semanales que hoy se arman con las tablas dinámicas de la hoja «Graficas» de la tabla 2 («GyA», «Fenol», «Solidos»…) y se usan en el informe ICAV (decidido el 2026-10-26).
+- **Semana de lunes a domingo** (decidido el 2026-10-26). Se elige con cualquier día de la semana; por defecto, la última semana completa (la que terminó el domingo). La semana en curso se puede ver: llega hasta hoy. Hay enlaces a la semana anterior y a la siguiente.
+- **Un valor por día y por serie (punto + fuente):** el promedio de las mediciones de ese día, por ejemplo las de 7 a. m. y 4 p. m. de BIOTA. Una muestra con solo el día cuenta en su día.
+  - Los valores con calificador cuentan como el peor caso y el promedio que los incluye lleva el marcador vacío.
+  - Los dudosos no entran. Un día sin datos deja un hueco.
+- **Cada gráfica es una lista de variables** (punto + parámetro + fuente), con título y orden, en la administración (Vistas → Gráficas del ICAV): añadir o quitar una serie no requiere programar.
+  - Todas las variables de una gráfica tienen la misma unidad; puede haber varios parámetros, que se distinguen por el trazo, como en el explorador.
+  - Hasta 8 puntos por gráfica (§7.1). El color es el punto y la forma, la fuente.
+  - Se dibuja el límite vigente de cada punto, si lo hay.
+- Debajo de cada gráfica, una tabla con los promedios de cada día y cada serie.
+- **Descargas:** cada gráfica como imagen (PNG), para pegarla en el informe, y la semana en Excel, con una hoja por gráfica (días en filas, series en columnas).
+- **Configuración inicial** (la crea la migración `dashboards/0004`; se ajusta en la administración):
+
+| Gráfica | Series |
+|---|---|
+| Grasas y aceites | G&A en BA-4001, BA-4055 y BA-4010 clarificada (Labviewer) y en BA-4010 (BIOTA) |
+| Fenoles | BA-4001, BA-4009A, BA-4008 y BA-4010 (BIOTA) y BA-4010 clarificada (Labviewer) |
+| Sólidos suspendidos | SS en BA-4001, BA-4055 y BA-4010 clarificada (Labviewer) y SST en BA-4010 (BIOTA) |
+| Biorreactor BA-4008 (aguas agrias) | N total y N-NH3 en BA-4008 salida (BIOTA) |
+| Nitrógeno | N total en BA-4008 entrada, BA-4008 salida, entrada a BA-4009A y BA-4010, y N-NH3 en BA-4008 salida y BA-4010 (BIOTA); N total en BA-4010 clarificada (Labviewer) |
+| Sulfatos de los separadores | SE-3010, SE-3020, SE-3030, SE-3050 y SE-3060 (Por confirmar) |
+| Sulfatos de la PTAR | entrada a BA-4009A, BA-4008, BA-4009A y BA-4010 (BIOTA) y BA-4010 clarificada (Labviewer) |
+| Fenoles en agua agria | Agua agria (Por confirmar) |
+
+  - Las columnas de Labviewer que usan las tablas dinámicas son las del bloque «BA-4010 CLARIFICADA», el punto «BA-4010 clarificada» (pendiente 5).
+  - "SS" de Labviewer y SST de BIOTA van en la misma gráfica como dos parámetros, sin darlos por equivalentes (pendiente 4).
+- La calificación de la semana (el índice de «Hoja4» y su radar) no está aquí: sus reglas siguen pendientes (§8, pendiente 11).
+
 ## 8. Límites y cumplimiento
 
 - **Fuentes de los límites:** la hoja de límites de la tabla 1 (límites de vertimiento de BA-4010 y máximos de diseño de BA-4001) y las ventanas operativas de «Datos Calidad Fase 1». Son datos con vigencia (§5), no números en el código.
@@ -255,7 +285,7 @@ Gráficas con ECharts, como el dashboard U044.
 - Las tablas de referencia no coinciden entre sí en algunos límites; queda pendiente cuál aplica (§15).
 - **"Sin datos" nunca es "cumple".** Si en un período no hay mediciones, el resultado es "sin datos".
 
-**Análisis semanal automático (ICAV, fase posterior):** se calculará solo cada semana. Sus reglas se definirán al llegar a esa fase. La hoja «Hoja4» de la tabla 2 (con «Rangos ICAV») es un ejemplo antiguo que ya no funciona y no se toma como referencia.
+**Análisis semanal automático (ICAV, fase posterior):** se calculará solo cada semana. Sus reglas se definirán al llegar a esa fase. Las gráficas semanales del informe ya están en la app (§7.3). La hoja «Hoja4» de la tabla 2 (con «Rangos ICAV») es un ejemplo antiguo que ya no funciona y no se toma como referencia.
 
 ## 9. Migración del histórico
 
@@ -341,7 +371,7 @@ El mismo de Avante, para mantener una sola forma de trabajar:
 
 - **Capturar debe ser más rápido que en Excel:** teclado (Tab y Enter), encabezados fijos y celdas que muestran al momento si quedaron guardadas o por qué no.
 - Interfaz en español. Los números se muestran con coma decimal; al capturar se acepta coma o punto.
-- Menú: **Variables importantes**, **Explorador**, **Exportaciones**, **Captura** (solo para quien tenga ámbitos) y **Administración** (solo para el administrador). El capturista solo ve **Captura**.
+- Menú: **Variables importantes**, **Explorador**, **ICAV**, **Exportaciones**, **Captura** (solo para quien tenga ámbitos) y **Administración** (solo para el administrador). El capturista solo ve **Captura**.
 - Las vistas de lectura deben poder usarse desde el celular.
 
 ## 14. Fases de desarrollo
@@ -352,7 +382,8 @@ El mismo de Avante, para mantener una sola forma de trabajar:
 | 1 | Importación del histórico de las dos tablas, con informe y revisión | El histórico completo está en la base y el informe está revisado |
 | 2 | Variables importantes y explorador de series con estadística | El fenol en 01, 08 y 10 y las otras cuatro variables se consultan sin Excel |
 | 3 | Captura manual validada por formatos, historial de cambios y exportación a Excel (a demanda y periódica) | Los tableristas dejan de llenar el Excel |
-| Luego | Análisis semanal automático (ICAV), consulta de Labviewer, lectura de PI, carga desde archivos, reporte diario de Fase I, alertas, indicadores calculados | — |
+| 4 | Gráficas semanales del ICAV, de lunes a domingo | Las gráficas del informe ICAV se sacan de la app, sin tablas dinámicas |
+| Luego | Análisis semanal automático (calificación del ICAV), consulta de Labviewer, lectura de PI, carga desde archivos, reporte diario de Fase I, alertas, indicadores calculados | — |
 
 La importación va antes que las vistas porque una vista sin datos no sirve, y porque es la mejor prueba del modelo de datos.
 
@@ -404,6 +435,11 @@ Cada fase se entrega funcionando y con pruebas. Prioridad de las pruebas:
 - **Flujos de BA-4005C/D:** en un formato aparte, «Flujos de PI».
 - **Exportación automática:** semanal; cada lunes, un archivo con todos los datos hasta el domingo, para descargar en la app. Una persona lo sube a SharePoint a mano.
 
+### Decidido el 2026-10-26 (gráficas del ICAV, §7.3)
+- **Gráficas del ICAV:** una pestaña con las 8 gráficas semanales de la hoja «Graficas» de la tabla 2, configurables en la administración.
+- **Semana:** de lunes a domingo.
+- La calificación de la semana sigue pendiente (pendiente 11).
+
 ### Pendientes
 1. ~~**Tableristas**~~: decidido el 2026-10-20.
 2. ~~**Capturista**~~: decidido el 2026-10-20.
@@ -420,7 +456,7 @@ Cada fase se entrega funcionando y con pruebas. Prioridad de las pruebas:
 8. ~~**Columnas casi vacías**~~: decidido el 2026-10-20 (no entran en los formatos iniciales).
 9. **Respaldo:** la exportación semanal y la entrega a SharePoint se decidieron el 2026-10-20; falta la retención de Litestream (hoy 3 días, como Avante).
 10. **Nombre** de la app.
-11. **Reglas del análisis semanal (ICAV):** se definen al llegar a esa fase.
+11. **Reglas del análisis semanal (ICAV):** se definen al llegar a esa fase. Las gráficas ya están (§7.3); falta cómo se califica la semana.
 
 ## 16. Archivos de referencia
 

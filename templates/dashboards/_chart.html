@@ -3,7 +3,9 @@ A chart drawn by static/js/charts.js from the data in the <script> that follows 
 (apps/dashboards/charts.py). Color: the point; marker shape: the source; line dash: the parameter,
 when there are several. The buttons hide and show parameters, points and sources; the table next
 to the chart holds the same series as numbers.
-Context: chart, chart_id, title, zoom (optional), group (optional: charts that zoom together).
+Context: chart, chart_id, title, zoom (optional), group (optional: charts that zoom together),
+image and image_title (optional: a button that downloads the chart as a PNG with that file name,
+drawn with that title and a legend).
 {% endcomment %}
 <figure class="grafica" data-chart="{{ chart_id }}"{% if zoom %} data-zoom{% endif %}{% if group %} data-group="{{ group }}"{% endif %}>
   <div class="grafica__controles">
@@ -36,6 +38,9 @@ Context: chart, chart_id, title, zoom (optional), group (optional: charts that z
       {% for source in chart.sources %}
         <p class="leyenda__fuente"><span class="forma forma--{{ source.shape }}" aria-hidden="true"></span>{{ source.code }}</p>
       {% endfor %}
+    {% endif %}
+    {% if image %}
+      <button type="button" class="boton boton--secundario boton--imagen" data-image="{{ image }}" data-image-title="{{ image_title }}">Descargar imagen</button>
     {% endif %}
   </div>
   <div class="grafica__lienzo" data-canvas role="img" aria-label="Gráfica de {% if chart.parameters|length > 1 %}{% for parameter in chart.parameters %}{{ parameter.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ title }}{% endif %}{% if chart.unit %} en {{ chart.unit }}{% endif %}; los valores están en la tabla."></div>
