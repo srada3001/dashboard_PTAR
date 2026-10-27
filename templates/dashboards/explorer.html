@@ -58,7 +58,7 @@
     </header>
 
     {% if unit_chart.chart.series %}
-      {% include "dashboards/_chart.html" with chart=unit_chart.chart chart_id="grafica-explorador-"|add:n title=unit_chart.parameters.0.name zoom=True group="explorador" %}
+      {% include "dashboards/_chart.html" with chart=unit_chart.chart chart_id="grafica-explorador-"|add:n title=unit_chart.parameters.0.name zoom=True group="explorador" image=unit_chart.image.0 image_title=unit_chart.image.1 %}
     {% else %}
       <p class="sin-datos">Sin datos en esas fechas.</p>
     {% endif %}

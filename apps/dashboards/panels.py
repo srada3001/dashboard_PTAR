@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 from apps.catalog.models import Limit, Variable
 
-from .charts import chart_data, point_color, source_shapes
+from .charts import chart_data, image, point_color, source_shapes
 from .models import ImportantVariable
 from .stats import (
     Description,
@@ -50,6 +50,7 @@ class Card:
     # Series with nothing in the chart nor in the last 30 days: (variable, last value or None).
     stale: list = field(default_factory=list)
     chart: dict | None = None
+    image: tuple = ("", "")  # (file name, title) of the chart downloaded as a PNG
 
     @property
     def parameter(self):
@@ -99,6 +100,7 @@ def build_card(item, last_day, chart_days):
 
     period = Period.DAY if chart_days >= DAILY_MEANS_FROM else None
     card.chart = chart_data([parameter], points, variables, chart_samples, {parameter.pk: book}, chart_first, last_day, period)
+    card.image = image(parameter.name, parameter.unit, chart_first, last_day)
     return card
 
 

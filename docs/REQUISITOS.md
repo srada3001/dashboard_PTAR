@@ -213,6 +213,7 @@ Gráficas con ECharts, como el dashboard U044.
 - **Fuera de límite, 7 días:** cuántas muestras de los últimos 7 días rompen el límite vigente en su fecha, de las que tienen límite. Sin muestras es «sin datos»; sin límite definido, «sin límite». Además, el último valor se marca si está fuera del límite.
 - **Huecos:** la línea se corta cuando una serie pasa más de tres veces su intervalo habitual sin datos (y al menos un día), o cuando falta un día, una semana o un mes de promedios.
 - En todas las gráficas se pueden ocultar puntos y fuentes. El eje es siempre lineal: no hay escala logarítmica (decidido el 2026-10-21).
+- **Todas las gráficas se descargan como imagen** (PNG), para pegarlas en un informe (decidido el 2026-10-26): con título, unidad, fechas y leyenda, y solo lo que se está viendo (sin los puntos, fuentes o parámetros ocultos; en el explorador, con el acercamiento).
 
 **Dónde se mide hoy cada una:**
 
@@ -251,7 +252,7 @@ Las gráficas semanales que hoy se arman con las tablas dinámicas de la hoja «
   - Hasta 8 puntos por gráfica (§7.1). El color es el punto y la forma, la fuente.
   - Se dibuja el límite vigente de cada punto, si lo hay.
 - Debajo de cada gráfica, una tabla con los promedios de cada día y cada serie.
-- **Descargas:** cada gráfica como imagen (PNG), para pegarla en el informe, y la semana en Excel, con una hoja por gráfica (días en filas, series en columnas).
+- **Descargas:** cada gráfica como imagen (PNG), como todas las del dashboard (§7.1), y la semana en Excel, con una hoja por gráfica (días en filas, series en columnas).
 - **Configuración inicial** (la crea la migración `dashboards/0004`; se ajusta en la administración):
 
 | Gráfica | Series |
@@ -439,6 +440,7 @@ Cada fase se entrega funcionando y con pruebas. Prioridad de las pruebas:
 - **Gráficas del ICAV:** una pestaña con las 8 gráficas semanales de la hoja «Graficas» de la tabla 2, configurables en la administración.
 - **Semana:** de lunes a domingo.
 - La calificación de la semana sigue pendiente (pendiente 11).
+- **Imagen de las gráficas:** todas las gráficas del dashboard se descargan como PNG, no solo las del ICAV (§7.1).
 
 ### Pendientes
 1. ~~**Tableristas**~~: decidido el 2026-10-20.

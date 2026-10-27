@@ -38,7 +38,7 @@
 
     {% if card.rows %}
       {% if card.chart.series %}
-        {% include "dashboards/_chart.html" with chart=card.chart chart_id=card.chart_id title=parameter.name %}
+        {% include "dashboards/_chart.html" with chart=card.chart chart_id=card.chart_id title=parameter.name image=card.image.0 image_title=card.image.1 %}
       {% else %}
         <p class="sin-datos">Sin datos en la gráfica.</p>
       {% endif %}

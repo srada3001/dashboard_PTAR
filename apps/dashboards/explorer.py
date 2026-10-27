@@ -18,7 +18,7 @@ from django.utils import timezone
 
 from apps.catalog.models import Limit, Parameter, SamplingPoint, Source, Variable
 
-from .charts import chart_data, point_color, source_shapes
+from .charts import chart_data, image, point_color, source_shapes
 from .models import MAX_POINTS
 from .stats import Description, Exceedance, LimitBook, Period, count_suspect, describe, load_samples
 
@@ -212,6 +212,7 @@ class UnitChart:
     parameters: list
     results: list
     chart: dict
+    image: tuple  # (file name, title) of the chart downloaded as a PNG
 
     @property
     def several(self):
@@ -284,7 +285,10 @@ def explore(form):
             for variable in series
         ]
         chart = chart_data(members, points, series, samples, books, first_day, last_day, period)
-        charts.append(UnitChart(unit=unit, parameters=members, results=results, chart=chart))
+        label = members[0].name if len(members) == 1 else ", ".join(parameter.code for parameter in members)
+        charts.append(UnitChart(
+            unit=unit, parameters=members, results=results, chart=chart, image=image(label, unit, first_day, last_day),
+        ))
     return Exploration(
         parameters=parameters,
         first_day=first_day,

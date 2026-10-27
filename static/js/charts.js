@@ -156,7 +156,7 @@
       this.chart.setOption(this.option(), { replaceMerge: ["series", "dataZoom"] });
     }
 
-    /** The visible series as a PNG, with a title and a legend, for a report (the ICAV charts). */
+    /** The visible series as a PNG, with a title and a legend, to paste in a report. */
     download(button) {
       const box = document.createElement("div");
       box.style.cssText = "position: fixed; left: -10000px; top: 0; width: 1100px; height: 620px;";
@@ -166,8 +166,16 @@
       const names = this.drawn.map((s) => s.name);
       const limits = [...new Set(this.data.limits.filter((l) => !this.hiddenPoints.has(l.point)).map((l) => l.text))];
       const rows = Math.ceil(names.length / 4);
+      let title = button.dataset.imageTitle;
+      // A zoomed chart (the explorer) is saved as it is seen, and its title says so.
+      const [zoomed] = this.chart.getOption().dataZoom || [];
+      if (zoomed && zoomed.startValue != null && (zoomed.start > 0 || zoomed.end < 100)) {
+        option.xAxis.min = zoomed.startValue;
+        option.xAxis.max = zoomed.endValue;
+        title += ` (acercamiento: del ${dayText(zoomed.startValue / 1000)} al ${dayText(zoomed.endValue / 1000 - 1)})`; // the axis ends at 00:00 of the next day
+      }
       option.title = {
-        text: button.dataset.imageTitle,
+        text: title,
         subtext: [...limits, this.data.period === "day" ? "Promedios diarios" : ""].filter(Boolean).join(" · "),
         left: 16,
         top: 10,

@@ -11,6 +11,7 @@ import calendar
 import datetime
 
 from django.utils import timezone
+from django.utils.text import slugify
 
 from apps.catalog.models import Source
 from apps.measurements.models import TimePrecision
@@ -47,6 +48,14 @@ def epoch(moment):
     else:
         moment = datetime.datetime.combine(moment, datetime.time(0))
     return calendar.timegm(moment.timetuple())
+
+
+def image(label, unit, first_day, last_day):
+    """(file name, title) of a chart downloaded as a PNG: 'fenoles_2026-09-27_2026-10-26.png' and
+    'Fenoles (mg/L) · del 2026-09-27 al 2026-10-26'."""
+    name = f"{slugify(label) or 'grafica'}_{first_day:%Y-%m-%d}_{last_day:%Y-%m-%d}.png"
+    unit = f" ({unit})" if unit else ""
+    return name, f"{label}{unit} · del {first_day:%Y-%m-%d} al {last_day:%Y-%m-%d}"
 
 
 def bounds_text(low, high, unit=""):

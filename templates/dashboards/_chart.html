@@ -4,8 +4,8 @@ A chart drawn by static/js/charts.js from the data in the <script> that follows 
 when there are several. The buttons hide and show parameters, points and sources; the table next
 to the chart holds the same series as numbers.
 Context: chart, chart_id, title, zoom (optional), group (optional: charts that zoom together),
-image and image_title (optional: a button that downloads the chart as a PNG with that file name,
-drawn with that title and a legend).
+image and image_title (a button that downloads the chart as a PNG with that file name, drawn with
+that title and a legend; every chart of the dashboard has it).
 {% endcomment %}
 <figure class="grafica" data-chart="{{ chart_id }}"{% if zoom %} data-zoom{% endif %}{% if group %} data-group="{{ group }}"{% endif %}>
   <div class="grafica__controles">

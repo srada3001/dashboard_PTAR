@@ -173,6 +173,12 @@ class TestImportantVariables:
         assert "73" not in table  # the suspect value is neither in the table nor in the chart
         assert [row[1] for row in chart["series"][0]["data"]] == [0.9, 0.1, 0.3]
 
+    def test_the_chart_downloads_as_an_image(self, admin_user, admin_client, phenols_card, phenols_biota):
+        measure(phenols_biota, admin_user, at(DAY, 7), 0.1)
+        html = page(admin_client, end=DAY.isoformat(), days=7)
+        assert 'data-image="fenoles_2026-10-13_2026-10-19.png"' in html
+        assert 'data-image-title="Fenoles (mg/L) · del 2026-10-13 al 2026-10-19"' in html
+
     def test_no_data_in_the_week_is_never_compliance(self, admin_user, admin_client, phenols_card, phenols_biota, outlet, phenols):
         Limit.objects.create(point=outlet, parameter=phenols, kind=Limit.Kind.DISCHARGE, max_value=0.2)
         measure(phenols_biota, admin_user, at(days_before(10), 7), 0.1)
@@ -277,6 +283,14 @@ class TestExplorer:
             assert shown in html
         assert "1 dudoso sin revisar, excluido" in html
         assert "Sin límite" in html
+
+    def test_each_chart_downloads_as_an_image(self, admin_user, engineer_client, phenols_biota, phenols, outlet, biota):
+        cod = Parameter.objects.create(code="DQO", name="Demanda química de oxígeno", unit="mg/L")
+        measure(phenols_biota, admin_user, at(DAY, 7), 0.1)
+        measure(Variable.objects.create(point=outlet, parameter=cod, source=biota), admin_user, at(DAY, 7), 80)
+        html = engineer_client.get(reverse("explorer"), self.query([phenols, cod], [outlet], start=DAY, end=DAY)).content.decode()
+        assert 'data-image="fenoles-dqo_2026-10-19_2026-10-19.png"' in html  # one chart: same unit
+        assert 'data-image-title="Fenoles, DQO (mg/L) · del 2026-10-19 al 2026-10-19"' in html
 
     def test_percent_outside_the_limit(self, admin_user, engineer_client, phenols_biota, phenols, outlet):
         Limit.objects.create(point=outlet, parameter=phenols, kind=Limit.Kind.DISCHARGE, max_value=0.2)
