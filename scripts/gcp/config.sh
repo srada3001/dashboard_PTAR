@@ -22,6 +22,12 @@ RUN_SA="$RUN_SA_NAME@$PROJECT_ID.iam.gserviceaccount.com"
 APP_ENV="ALLOWED_HOSTS=.run.app,LITESTREAM_BUCKET=$BUCKET,CSRF_TRUSTED_ORIGINS=https://refinia-ptar.web.app"
 APP_SECRETS="SECRET_KEY=$SECRET_KEY_SECRET:latest"
 
+# Local backups (backup.sh): the Ecopetrol OneDrive folder, so they also live off this computer.
+LITESTREAM_IMAGE=litestream/litestream:0.3.13   # Same version as the Dockerfile
+if [ -z "${BACKUP_DIR:-}" ] && command -v cygpath >/dev/null 2>&1; then
+    BACKUP_DIR="$(cygpath -u "${OneDriveCommercial:-$HOME/OneDrive - Ecopetrol S.A}")/respaldos/dashboard_ptar"
+fi
+
 require_project() {
     if [ -z "$PROJECT_ID" ]; then
         echo "No hay proyecto de Google Cloud activo. Ejecuta: gcloud config set project ID_DEL_PROYECTO" >&2

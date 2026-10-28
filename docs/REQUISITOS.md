@@ -329,6 +329,7 @@ Las gráficas semanales que hoy se arman con las tablas dinámicas de la hoja «
 ## 10. Respaldo y exportaciones
 
 - **Respaldo continuo:** Litestream copia cada cambio de la base a un bucket privado de Cloud Storage en aproximadamente un segundo, como en Avante. Se activa el versionado de objetos del bucket. La retención está pendiente (Avante usa 3 días).
+- **Respaldos de largo plazo** (decidido el 2026-10-28): copias de la base en la carpeta `respaldos\dashboard_ptar\` del OneDrive de Ecopetrol del administrador, como en Avante. Se hacen solas antes de cada despliegue y a voluntad, con `Descargar respaldos.cmd` de la carpeta `respaldos\`. No hay copias programadas. Se conservan todas. Cada respaldo también descarga a `respaldos\dashboard_ptar\exportaciones\` los archivos semanales que falten.
 - **Exportación a Excel a demanda** (ingenieros y administrador), en la página **Exportaciones**, en dos formas:
   - larga: una fila por medición, con fecha, hora, punto, parámetro, fuente, calificador, valor, si es dudoso y quién la registró;
   - ancha, por fuente: parecida a las hojas de hoy, para quien quiera seguir trabajando en Excel: una hoja por fuente, una fila por fecha y hora, una columna por punto y parámetro. Sin los dudosos.

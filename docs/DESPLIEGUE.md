@@ -19,6 +19,7 @@ Los scripts de `scripts/gcp/` se ejecutan en **Git Bash**, desde la raíz del re
 2. **Mientras funciona**, Litestream copia cada cambio a Cloud Storage en aproximadamente un segundo.
 3. **Litestream guarda 3 días de historial**, así que la base se puede restaurar a cualquier momento de ese período. La retención definitiva está pendiente (REQUISITOS.md §15).
 4. **El bucket tiene versionado de objetos:** un archivo de la réplica sobrescrito o borrado se puede recuperar.
+5. **Las copias de largo plazo** están en tu OneDrive de Ecopetrol: se hacen antes de cada despliegue y cuando las pidas (sección 9).
 
 **Regla importante: despliega cuando nadie esté usando el dashboard.** Durante un despliegue, la versión vieja y la nueva conviven unos segundos, y los cambios hechos justo en ese momento se pierden. `deploy.sh` te avisa si alguien usó la app en los últimos 10 minutos.
 
@@ -61,8 +62,9 @@ Si se corta a mitad de camino, vuelve a ejecutarlo: los recursos que ya existen 
 bash scripts/gcp/deploy.sh
 ```
 
-1. Sube el código a Cloud Build, que construye la imagen.
-2. Publica la app en Cloud Run con una sola instancia y CPU siempre asignada.
+1. Si la app ya existe, respalda la base en OneDrive (sección 9). Si el respaldo falla, no despliega.
+2. Sube el código a Cloud Build, que construye la imagen.
+3. Publica la app en Cloud Run con una sola instancia y CPU siempre asignada.
 
 Al final imprime la dirección del dashboard, del estilo `https://dashboard-ptar-123456789012.us-east1.run.app`.
 
@@ -131,6 +133,38 @@ Cada lunes, la página **Exportaciones** ofrece un Excel con todos los datos has
 - Si falla, la página dice «Falló» y se intenta otra vez una hora después. El motivo está en Administración → Exportaciones semanales y en los logs.
 - Prepararlo usa unos 100 MB más de memoria durante esos minutos. Si los logs muestran que el contenedor se queda sin memoria, sube `--memory` a `2Gi` en `deploy.sh`.
 - En local, los archivos quedan en la carpeta `exports/` del repositorio (ignorada por git). `uv run python manage.py weekly_export` prepara el de esta semana sin esperar.
+
+## 9. Respaldos en OneDrive
+
+Litestream solo guarda 3 días de historial. Las copias de más tiempo se guardan en tu OneDrive de Ecopetrol, en `OneDrive - Ecopetrol S.A\respaldos\dashboard_ptar\`, junto a las de Avante:
+
+```
+respaldos\
+  Descargar respaldos.cmd                     el ejecutable (Avante, dashboard PTAR o los dos)
+  dashboard_ptar\
+    dashboard_ptar-2026-10-28_1424\
+      dashboard_ptar.sqlite3                  la base, lista para abrir
+    dashboard_ptar-2026-10-28_1424.log        lo que se copió
+    exportaciones\                            todos los Excel semanales (sección 8)
+```
+
+**Cuándo se hacen:**
+- **Antes de cada despliegue,** solas: `deploy.sh` corre `scripts/gcp/backup.sh` y, si falla, no despliega. Para desplegar sin respaldo (solo si de verdad no hace falta): `SKIP_BACKUP=1 bash scripts/gcp/deploy.sh`.
+- **Cuando quieras:** doble clic en `respaldos\Descargar respaldos.cmd`, o desde Git Bash:
+
+```bash
+bash scripts/gcp/backup.sh
+```
+
+No hay copias programadas. Se conservan todas; con el histórico, cada base ocupa unos 260 MB.
+
+**Las exportaciones semanales:** cada respaldo descarga de `gs://<bucket>/exports/` a `exportaciones\` los archivos que todavía no estén ahí. Como cada uno trae todos los datos hasta su domingo, se guardan una sola vez y no dentro de cada respaldo.
+
+**Requisitos:** `gcloud` con la sesión iniciada (si no, `gcloud auth login`) y **Docker Desktop abierto**. La base se reconstruye con la misma versión de Litestream de la imagen (`litestream/litestream:0.3.13`), en un contenedor. Para guardar en otra carpeta, exporta `BACKUP_DIR` antes de ejecutar el script.
+
+**Cómo funciona:** el script lee del servicio la carpeta de la réplica en uso (`LITESTREAM_PATH`). Cada arranque del contenedor empieza una generación nueva de Litestream, y la réplica completa pasa de 1 GB, así que el script descarga solo la generación más reciente (unos 75 MB). Luego reconstruye la base, comprueba su integridad y muestra cuántas mediciones y personas tiene y la fecha del último cambio.
+
+**Para llevar una copia a producción:** `bash scripts/gcp/replace-db.sh <carpeta>/dashboard_ptar.sqlite3` (sección 7).
 
 ## Problemas comunes
 

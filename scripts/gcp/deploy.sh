@@ -23,6 +23,15 @@ if gcloud run services describe "$SERVICE" --region "$REGION" >/dev/null 2>&1; t
         read -rp "¿Desplegar de todas formas? [s/N] " ANSWER
         case "$ANSWER" in s|S|si|sí|SI|Sí) ;; *) echo "Despliegue cancelado."; exit 1 ;; esac
     fi
+    # A copy of the database before the new version (and its migrations) touches it.
+    if [ -z "${SKIP_BACKUP:-}" ]; then
+        echo "0/2 Respaldando la base antes de desplegar..."
+        if ! bash scripts/gcp/backup.sh; then
+            echo "No se pudo respaldar la base; no se desplegó. Corrige el problema o, si de verdad" >&2
+            echo "no hace falta el respaldo, despliega con: SKIP_BACKUP=1 bash scripts/gcp/deploy.sh" >&2
+            exit 1
+        fi
+    fi
 fi
 
 TAG="$(git rev-parse --short HEAD 2>/dev/null || echo sin-commit)-$(date +%Y%m%d%H%M%S)"

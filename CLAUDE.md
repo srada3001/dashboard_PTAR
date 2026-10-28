@@ -88,6 +88,7 @@
   - en cada despliegue: `bash scripts/gcp/deploy.sh`;
   - primer administrador: `bash scripts/gcp/create-admin.sh`;
   - reemplazar la base de producción por la local: `bash scripts/gcp/replace-db.sh db.sqlite3`;
+  - respaldo en el OneDrive de Ecopetrol (también lo corre `deploy.sh`; el ejecutable `Descargar respaldos.cmd` de la carpeta `respaldos\` lo corre a voluntad): `bash scripts/gcp/backup.sh`;
   - guía en `docs/DESPLIEGUE.md`.
 
 ## Estructura
