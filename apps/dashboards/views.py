@@ -12,7 +12,6 @@ from django.utils import timezone
 
 from apps.accounts.permissions import reader_required
 from apps.exports.templatetags.exports import thousands
-from apps.exports.views import MAX_AT_ONCE
 from apps.measurements.models import Measurement
 
 from . import export, weekly
@@ -93,10 +92,11 @@ def explorer_export(request):
         return redirect(f"{reverse('explorer')}?{request.GET.urlencode()}")
     data = form.cleaned_data
     total = export.measurement_count(chosen_variables(form.selections()), data["start"], data["end"])
-    if total > MAX_AT_ONCE:
+    if total > export.MAX_AT_ONCE:
         messages.error(request, (
-            f"Son {thousands(total)} mediciones; al momento se descargan hasta {thousands(MAX_AT_ONCE)}. "
-            "Acorta las fechas o usa el archivo semanal de Exportaciones, que tiene todos los datos."
+            f"Son {thousands(total)} mediciones; al momento se descargan hasta {thousands(export.MAX_AT_ONCE)}. "
+            "Acorta las fechas o elige menos series. El archivo semanal de Exportaciones, del administrador, "
+            "tiene todos los datos."
         ))
         return redirect(f"{reverse('explorer')}?{request.GET.urlencode()}")
     exploration = explore(form)

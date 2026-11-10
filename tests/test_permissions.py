@@ -29,11 +29,11 @@ class TestCapturerReadsNothing:
         assert "Captura" in page
         assert "Variables importantes" not in page and "Explorador" not in page and "ICAV" not in page and "Administración" not in page
 
-    def test_sees_only_their_forms(self, capturer, capturer_client, biota_form, nalco_form):
+    def test_sees_only_their_forms(self, capturer, capturer_client, biota_form, ecolab_form):
         capturer.capture_forms.set([biota_form])
         page = capturer_client.get(reverse("capture_index")).content.decode()
         assert "BIOTA Fase I" in page
-        assert "Nalco" not in page
+        assert "Ecolab" not in page
 
     def test_without_forms_still_lands_on_capture(self, capturer_client):
         page = capturer_client.get(reverse("capture_index")).content.decode()
@@ -50,10 +50,10 @@ class TestEngineer:
         page = engineer_client.get(reverse("important_variables")).content.decode()
         assert ">Captura<" not in page
 
-    def test_with_forms_captures_only_in_them(self, engineer, engineer_client, biota_form, nalco_form):
-        engineer.capture_forms.set([nalco_form])
+    def test_with_forms_captures_only_in_them(self, engineer, engineer_client, biota_form, ecolab_form):
+        engineer.capture_forms.set([ecolab_form])
         page = engineer_client.get(reverse("capture_index")).content.decode()
-        assert "Nalco" in page and "BIOTA Fase I" not in page
+        assert "Ecolab" in page and "BIOTA Fase I" not in page
 
     def test_has_no_administration(self, engineer_client):
         page = engineer_client.get(reverse("important_variables")).content.decode()
@@ -61,9 +61,9 @@ class TestEngineer:
 
 
 class TestAdministrator:
-    def test_captures_in_every_form(self, admin_client, biota_form, nalco_form):
+    def test_captures_in_every_form(self, admin_client, biota_form, ecolab_form):
         page = admin_client.get(reverse("capture_index")).content.decode()
-        assert "BIOTA Fase I" in page and "Nalco" in page
+        assert "BIOTA Fase I" in page and "Ecolab" in page
 
     def test_menu_shows_everything(self, admin_client):
         page = admin_client.get(reverse("important_variables")).content.decode()

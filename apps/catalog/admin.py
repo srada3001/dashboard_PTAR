@@ -125,7 +125,7 @@ class CaptureFormVariableInline(admin.TabularInline):
     model = CaptureFormVariable
     extra = 0
     autocomplete_fields = ("variable",)
-    fields = ("order", "variable")
+    fields = ("order", "section", "variable")
 
 
 @admin.register(CaptureForm)

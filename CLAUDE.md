@@ -1,15 +1,16 @@
 # Dashboard PTAR
 
-**Dashboard PTAR** (repositorio `dashboard_PTAR`) es la aplicación web interna que reúne los datos de calidad y de operación de la PTAR de la Refinería de Barrancabermeja (Ecopetrol). Recibe los datos del laboratorio central (Labviewer), de BIOTA y Nalco. Reemplaza los Excel que hoy se editan a mano: valida los datos al ingresarlos, los guarda en un formato único y ofrece vistas de tendencias. Es una herramienta más de RefinIA (`refinia-portal`).
+**Dashboard PTAR** (repositorio `dashboard_PTAR`) es la aplicación web interna que reúne los datos de calidad y de operación de la PTAR de la Refinería de Barrancabermeja (Ecopetrol). Recibe los datos del laboratorio central (Labviewer), de BIOTA y Ecolab (antes Nalco). Reemplaza los Excel que hoy se editan a mano: valida los datos al ingresarlos, los guarda en un formato único y ofrece vistas de tendencias. Es una herramienta más de RefinIA (`refinia-portal`).
 
 **La especificación completa está en [docs/REQUISITOS.md](docs/REQUISITOS.md). Léela antes de proponer o implementar cualquier cambio de alcance, de modelo de datos o de reglas.** Las decisiones abiertas están en su §15: no las des por resueltas; si una tarea depende de una, pregunta.
 
 ## Estado
 - Fase 0 hecha y desplegada: proyecto base, usuarios con roles y ámbitos, login con bloqueo, catálogos y límites en el admin con registro de auditoría, estética RefinIA, pantallas por rol.
 - Producción: https://dashboard-ptar-248156452075.us-east1.run.app (servicio `dashboard-ptar`). Se despliega a mano con `scripts/gcp/deploy.sh`, como Avante, nunca con cada push: la base vive en el contenedor y un despliegue mientras alguien captura pierde esos cambios.
-- Fase 1 (importación del histórico) implementada: mediciones con historial, catálogo inicial, mapeos e importación con informe. El histórico (unas 636.000 mediciones) está importado en la base local; falta revisar el informe y llevar la base a producción con `scripts/gcp/replace-db.sh` (decidido: la base local reemplaza la de producción).
+- Fase 1 (importación del histórico) implementada: mediciones con historial, catálogo inicial, mapeos e importación con informe. El histórico está importado en la base local y en producción (el respaldo del 2026-10-28 tiene 641.498 mediciones, hasta el 21 de octubre). El 2026-11-06 se importaron las versiones nuevas de las dos tablas (6.509 mediciones más, hasta el 6 de noviembre) sobre un respaldo de producción, sin las mediciones de prueba, y esa base reemplazó la de producción (648.006 mediciones; se conservaron las personas). Para futuras importaciones: partir de un respaldo de producción (`backup.sh`), no de la base local, para no perder personas ni capturas.
 - Fase 2 (variables importantes y explorador) implementada y desplegada. Los puntos de cada variable importante son datos (admin); la configuración inicial la crea la migración `dashboards/0002`. Solo hay un límite cargado (fenoles en BA-4010); los demás de §8 los carga el administrador.
 - Fase 3 (captura, historial y exportaciones) implementada; las decisiones del 2026-10-20 están en §15. Los formatos iniciales los crea la migración `catalog/0004` desde `import_maps/` (solo variables con datos desde octubre de 2025).
+- **Pendiente al entrar en uso:** quitar la importación desde Excel (`apps/imports`, `import_maps/`, `import_history`); con ella desaparece el nombre «Nalco», que hoy solo queda para leer el Excel histórico (la fuente se llama Ecolab).
 - Fase 4 (gráficas del ICAV, §7.3) implementada: las 8 gráficas semanales de «Graficas» de la tabla 2, de lunes a domingo; la migración `dashboards/0004` crea la configuración inicial. La calificación del ICAV sigue pendiente (§15, pendiente 11).
 
 ## Stack
@@ -41,16 +42,17 @@
   - **los rangos son opcionales:** la app tiene que funcionar sin ellos.
 - **Historial:**
   - toda creación, corrección o borrado de una medición queda en el historial (valor anterior, quién, cuándo, motivo opcional);
-  - el historial nunca se borra;
+  - el historial nunca se borra, una vez la plataforma esté en uso. Mientras se construye (decidido el 2026-11-09), el usuario puede pedir borrar del todo datos repetidos o de prueba, también de su historial; solo él lo decide, nunca Claude por su cuenta;
   - una sola medición por (variable, fecha y hora).
 - **"Sin datos" nunca es "cumple"** en límites, indicadores ni en el análisis semanal.
 - **Importación:**
   - "<10" se importa con su calificador; los demás valores no numéricos del histórico quedan como NaN (no se importan) y el informe los cuenta;
   - no se corrigen valores solos: los numéricos fuera del rango físico se importan marcados como dudosos, quedan fuera de las gráficas y de la estadística, y una persona decide;
-  - no se inventan horas: si la fuente solo da el día, se guarda sin hora.
+  - no se inventan horas: si la fuente solo da el día, se guarda sin hora. Excepción, BIOTA (decidido el 2026-11-09): muestrea a las 7 a. m. y 4 p. m., así que sus valores de solo el día y de a. m. van a las 07:00 y los de p. m. a las 16:00.
 - **Roles:**
   - administrador, ingeniero (lee todo; captura solo en sus ámbitos) y capturista (**sin ninguna lectura**; captura solo en sus ámbitos);
   - al inicio, los tableristas capturan todas las fuentes;
+  - capturista e ingeniero corrigen y llenan solo datos de las últimas 48 horas; más atrás, solo el administrador;
   - los permisos se verifican en el servidor en cada vista;
   - una cuenta por persona, nunca compartida; las personas se desactivan, no se borran.
 - **Límites** con vigencia: cada muestra se evalúa con el límite vigente en su fecha.
@@ -62,7 +64,7 @@
 
 ## Datos de referencia
 - Los Excel con datos reales están **fuera del repositorio**, en `C:\Users\srada\Desktop\referencia_ptar\`:
-  - `tabla_referencia_1.xlsx`: aliado químico (Nalco), hoja «Entrada de Datos»;
+  - `tabla_referencia_1.xlsx`: aliado químico (Ecolab, antes Nalco), hoja «Entrada de Datos»;
   - `tabla_referencia_2.xlsx`: "SEGUIMIENTO UT DESCONTAMINACIÓN NUEVO", hojas «Datos LABORATORIO» a «ECODIESEL».
 - **No van al repositorio**; `.gitignore` los excluye por si alguien los copia.
 - Para leerlos con Python, abrirlos con `openpyxl` en `read_only=True`: el modo normal falla por las cachés de tablas dinámicas.
@@ -93,21 +95,21 @@
 
 ## Estructura
 - `config/settings/`: `base`, `dev`, `test` y `prod`. La sesión usa la cookie `__session` y el token CSRF vive en la sesión (Firebase Hosting).
-- `apps/accounts`: `User` (modelo de usuario, con `role` y `capture_forms`), `permissions.py` (`reader_required`, `capture_required`), bloqueo por intentos fallidos (`lockout.py`), cambio de contraseña obligatorio (middleware) y `create_initial_admin`.
-- `apps/catalog`: `Source`, `ProcessArea`, `SamplingPoint` y `PointAlias`, `Parameter` (rango físico), `Variable` (punto + parámetro + fuente, rango habitual), `Limit` (con vigencia; `Limit.objects.in_force(fecha)`), `CaptureForm` y `CaptureFormVariable`. Todo se gestiona en el admin.
+- `apps/accounts`: `User` (modelo de usuario, con `role` y `capture_forms`), `permissions.py` (`reader_required`, `admin_required`, `capture_required`), bloqueo por intentos fallidos (`lockout.py`), cambio de contraseña obligatorio (middleware) y `create_initial_admin`.
+- `apps/catalog`: `Source`, `ProcessArea`, `SamplingPoint` y `PointAlias`, `Parameter` (rango físico), `Variable` (punto + parámetro + fuente, rango habitual), `Limit` (con vigencia; `Limit.objects.in_force(fecha)`), `CaptureForm` y `CaptureFormVariable` (con una sección opcional: el formato «BIOTA» tiene «Fase I», «DIAPAC», «Ecodiesel», «Aguas agrias a los separadores» y «Sodas gastadas»). Todo se gestiona en el admin.
 - `apps/core`: `AuditEntry` y `audit.py` (`AuditedAdmin`: registra antes → después de cada cambio hecho en el admin, también en los inlines), `PrivateCacheMiddleware` (`Cache-Control: private`), `HtmxRedirectMiddleware` y la redirección de inicio por rol.
 - `apps/capture`: página **Captura** (§6).
-  - `grid.py`: las celdas de cada variable según su frecuencia (`slots_of`), quién puede cambiar un valor (`may_change`: el capturista, solo lo suyo de las últimas 24 horas) y la rejilla de un formato para un día (`build`).
+  - `grid.py`: las celdas de cada variable según su frecuencia (`slots_of`), quién puede cambiar un valor (`may_change`: el capturista, solo lo suyo de las últimas 48 horas; el ingeniero, lo de sus formatos de las últimas 48 horas) o llenar una celda vacía (`may_add`: los dos, solo muestras de las últimas 48 horas); solo el administrador no tiene límite de tiempo y la rejilla de un formato para un día (`build`: las secciones una debajo de otra y, dentro de cada una, las variables de un punto juntas).
   - `views.py`: la rejilla, guardar una celda (`save_cell`, responde JSON: guardado, inválido, pide confirmar, conflicto…) y su historial. `static/js/capture.js` maneja el teclado, las confirmaciones con motivo y la barra de la celda.
 - `apps/dashboards`: **Variables importantes**, **Explorador** e **ICAV** (§7).
-  - `ImportantVariable`: un parámetro y sus puntos (hasta 8, `MAX_POINTS`), en el admin.
+  - `ImportantVariable` e `ImportantVariableItem`: una tarjeta con su título y su lista de variables (misma unidad, hasta 8 puntos, `MAX_POINTS`), en el admin.
   - `stats.py`: muestras (sin dudosos), ventanas por días calendario, estadística descriptiva, límites con vigencia (`LimitBook`) y agregación.
   - `charts.py`: los datos de cada gráfica (color = punto, forma = fuente, límites, horas de Bogotá); `static/js/charts.js` las dibuja y descarga cada una como PNG con título y leyenda (`image()` da su nombre y su título).
   - `panels.py` (tarjetas de variables importantes), `explorer.py` (formulario y series) y `export.py` (Excel del explorador).
   - `WeeklyChart` y `WeeklyChartVariable`: las gráficas del ICAV, una lista de variables con la misma unidad (hasta 8 puntos), en el admin. `weekly.py`: la semana de lunes a domingo, los promedios diarios, la tabla y el Excel (una hoja por gráfica).
 - `apps/measurements`: `Measurement` (formato largo; `time_precision`: hora exacta, a. m., p. m. o solo el día; `taken_at` es el inicio del periodo cuando no hay hora), `MeasurementHistory` (nunca se borra), `values.py` (qué es un valor: `parse_value`, rangos) y `records.py` (crear, corregir y borrar con historial; `version` detecta cambios de otra persona). En el admin, solo lectura: se corrige desde la captura.
 - `apps/imports`: `ImportBatch` (con conteos e informe), `maps.py` (lee `import_maps/`), `catalog.py` (crea el catálogo inicial que falte), `workbook.py` (busca las tablas de Excel en el XML del libro y lee valores y fórmulas), `timeline.py` (redondeo y deducción de horas por la secuencia), `importer.py` y el comando `import_history`.
-- `apps/exports`: página **Exportaciones** (§10): a demanda (larga o ancha por fuente, hasta 100.000 mediciones) y el archivo semanal (`WeeklyExport`, `weekly.py`), que `WeeklyExportMiddleware` dispara en segundo plano con la primera visita después del lunes. `workbook.py` escribe los Excel; `storage.py` los guarda en el bucket (`EXPORTS_BUCKET`) o en `exports/` en local.
+- `apps/exports`: página **Exportaciones** (§10), solo del administrador (`admin_required`): el archivo semanal (`WeeklyExport`, `weekly.py`), que `WeeklyExportMiddleware` dispara en segundo plano con la primera visita después del lunes. `workbook.py` escribe los Excel; `storage.py` los guarda en el bucket (`EXPORTS_BUCKET`) o en `exports/` en local.
 - `import_maps/`: `catalog/*.csv` (fuentes, zonas, puntos con alias, parámetros con rango físico) y un mapeo por tabla de Excel (`Tabla1.csv`, `Laboratorio.csv`…), una fila por columna, buscada por su encabezado. Solo encabezados y códigos, nunca valores.
 - `templates/`: `base.html` lleva la barra de RefinIA y el menú según el rol. `static/css/app.css` lleva los tokens y la barra copiados de `refinia-portal`.
 - `docker/` (`start.sh`, `litestream.yml`, `fetch_seed.py`), `Dockerfile`, `scripts/gcp/` y `docs/DESPLIEGUE.md`: despliegue en Cloud Run. La carpeta de la réplica en el bucket es `LITESTREAM_PATH` (por defecto `db`); `replace-db.sh` empieza una nueva.

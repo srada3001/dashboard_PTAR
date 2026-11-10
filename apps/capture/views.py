@@ -12,7 +12,7 @@ from apps.measurements import records
 from apps.measurements.models import Measurement, MeasurementHistory
 from apps.measurements.values import InvalidValue, format_number, outside_physical_range, outside_typical_range, parse_value
 
-from .grid import SLOTS, build, display, may_change, note, slots_of
+from .grid import SLOTS, build, display, may_change, may_write, note, slots_of
 
 
 def range_text(low, high, unit=""):
@@ -77,14 +77,15 @@ class Answer:
     """What the grid's script receives about a cell after trying to save it."""
 
     @staticmethod
-    def cell(state, measurement, user, now, message=""):
+    def cell(state, measurement, user, now, taken_at, message=""):
+        allowed, why = may_write(user, measurement, taken_at, now)
         return JsonResponse({
             "state": state,
             "message": message,
             "value": display(measurement),
             "version": records.version(measurement),
-            "note": " ".join(part for part in (note(measurement), may_change(user, measurement, now)[1]) if part),
-            "readonly": not may_change(user, measurement, now)[0],
+            "note": " ".join(part for part in (note(measurement), why) if part),
+            "readonly": not allowed,
             "suspect": bool(measurement and measurement.suspect),
         })
 
@@ -135,18 +136,18 @@ def save_cell(request, pk):
         )
         if records.version(current) != request.POST.get("original", ""):
             message = f"Otra persona cambió esta celda mientras tanto; ahora es «{display(current) or 'vacía'}»."
-            return Answer.cell("conflict", current, user, now, message)
+            return Answer.cell("conflict", current, user, now, taken_at, message)
 
         if not text:
             if current is None:
-                return Answer.cell("unchanged", None, user, now)
+                return Answer.cell("unchanged", None, user, now, taken_at)
             allowed, why = may_change(user, current, now)
             if not allowed:
                 return Answer.refuse("refused", why)
             if not confirmed:
                 return Answer.confirm(f"¿Borrar «{display(current)}»?", reason=True)
             records.delete(current, user, reason=reason)
-            return Answer.cell("deleted", None, user, now)
+            return Answer.cell("deleted", None, user, now, taken_at)
 
         try:
             parsed = parse_value(text)
@@ -158,11 +159,10 @@ def save_cell(request, pk):
             return Answer.refuse("invalid", f"Imposible para {parameter}: el rango físico es {limits}.")
         typed = f"{parsed.qualifier}{format_number(parsed.value)}"
         if current is not None and not current.suspect and (current.value, current.qualifier) == (parsed.value, parsed.qualifier):
-            return Answer.cell("unchanged", current, user, now)
-        if current is not None:
-            allowed, why = may_change(user, current, now)
-            if not allowed:
-                return Answer.refuse("refused", why)
+            return Answer.cell("unchanged", current, user, now, taken_at)
+        allowed, why = may_write(user, current, taken_at, now)
+        if not allowed:
+            return Answer.refuse("refused", why)
 
         questions = []
         if outside_typical_range(variable, parsed.value):
@@ -175,7 +175,7 @@ def save_cell(request, pk):
 
         measurement = records.write(variable, taken_at, slot.precision, parsed, user, reason=reason)
     measurement = Measurement.objects.select_related("created_by", "updated_by").get(pk=measurement.pk)
-    return Answer.cell("saved", measurement, user, now)
+    return Answer.cell("saved", measurement, user, now, taken_at)
 
 
 @capture_required

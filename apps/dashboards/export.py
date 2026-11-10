@@ -18,6 +18,9 @@ from apps.measurements.models import Measurement, TimePrecision
 
 from .stats import aggregate, day_span
 
+# What can be downloaded at once: Firebase cuts requests longer than 60 seconds.
+MAX_AT_ONCE = 100_000
+
 HOURS = {TimePrecision.AM: "a. m.", TimePrecision.PM: "p. m.", TimePrecision.DAY: ""}
 
 

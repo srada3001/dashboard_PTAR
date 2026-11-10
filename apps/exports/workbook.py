@@ -19,7 +19,6 @@ from apps.measurements.values import format_number
 
 LONG = "long"
 WIDE = "wide"
-SHAPES = [(LONG, "Larga: una fila por medición"), (WIDE, "Ancha: una hoja por fuente, como las hojas de hoy")]
 LONG_HEADERS = ["Fecha", "Hora", "Punto", "Parámetro", "Fuente", "Calificador", "Valor", "Unidad", "Dudoso", "Registrada por"]
 HOURS = {TimePrecision.AM: "a. m.", TimePrecision.PM: "p. m.", TimePrecision.DAY: ""}
 BOLD = Font(bold=True)

@@ -53,8 +53,8 @@ def biota(db):
 
 
 @pytest.fixture
-def nalco(db):
-    return Source.objects.create(code="Nalco", name="Nalco (aliado químico)")
+def ecolab(db):
+    return Source.objects.create(code="Ecolab", name="Ecolab (aliado químico)")
 
 
 @pytest.fixture
@@ -86,5 +86,5 @@ def biota_form(biota, phenols_biota):
 
 
 @pytest.fixture
-def nalco_form(nalco):
-    return CaptureForm.objects.create(name="Nalco", source=nalco)
+def ecolab_form(ecolab):
+    return CaptureForm.objects.create(name="Ecolab", source=ecolab)

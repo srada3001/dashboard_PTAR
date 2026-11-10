@@ -12,10 +12,11 @@ from django.db.models.functions import Lower
 
 class Schedule(models.TextChoices):
     """How often a variable is sampled, and the shape of a capture form. A variable's frequency
-    gives its cells in the capture: one per hour, 07:00 and 16:00, a. m. and p. m., or one per day."""
+    gives its cells in the capture: one per hour, 07:00 and 16:00, only 07:00, a. m. and p. m., or one per day."""
 
     HOURLY = "hourly", "Cada hora"
     TWICE_DAILY = "twice_daily", "7 a. m. y 4 p. m."
+    MORNING = "morning", "7 a. m."
     AM_PM = "am_pm", "a. m. y p. m."
     DAILY = "daily", "Diaria"
     OCCASIONAL = "occasional", "Eventual"
@@ -49,9 +50,9 @@ class StrippedNamesMixin:
 
 
 class Source(StrippedNamesMixin, models.Model):
-    """Who measured: Labviewer, BIOTA, Nalco, PI… Not who typed the value in."""
+    """Who measured: Labviewer, BIOTA, Ecolab, PI… Not who typed the value in."""
 
-    code = models.CharField("código", max_length=30, help_text="Nombre corto: Labviewer, BIOTA, Nalco, PI.")
+    code = models.CharField("código", max_length=30, help_text="Nombre corto: Labviewer, BIOTA, Ecolab, PI.")
     name = models.CharField("nombre", max_length=100, help_text="Por ejemplo, «Laboratorio central».")
     description = models.TextField("descripción", blank=True)
 
@@ -297,11 +298,23 @@ class CaptureForm(StrippedNamesMixin, models.Model):
     def __str__(self):
         return self.name
 
+    def sections(self):
+        """["Fase I", "DIAPAC"]: its sections, in the order they first appear (uses prefetched items)."""
+        return list(dict.fromkeys(item.section for item in self.items.all() if item.section))
 
-class CaptureFormVariable(models.Model):
+
+class CaptureFormVariable(StrippedNamesMixin, models.Model):
     form = models.ForeignKey(CaptureForm, on_delete=models.CASCADE, related_name="items", verbose_name="formato")
     variable = models.ForeignKey(Variable, on_delete=models.PROTECT, related_name="+", verbose_name="variable")
     order = models.PositiveSmallIntegerField("orden", default=0)
+    section = models.CharField(
+        "sección",
+        max_length=60,
+        blank=True,
+        help_text="Opcional. Las secciones se muestran una debajo de otra, por ejemplo «Fase I» y «DIAPAC».",
+    )
+
+    stripped_fields = ("section",)
 
     class Meta:
         verbose_name = "variable del formato"

@@ -29,16 +29,15 @@
 {% endif %}
 
 {% for card in cards %}
-  {% with parameter=card.parameter decimals=card.parameter.decimals %}
   <section class="tarjeta panel" aria-labelledby="variable-{{ card.item.pk }}">
     <header class="panel__encabezado">
-      <h3 id="variable-{{ card.item.pk }}">{{ parameter.name }}</h3>
-      <p class="ayuda">{% if parameter.code != parameter.name %}{{ parameter.code }} · {% endif %}{{ parameter.unit|default:"sin unidad" }}</p>
+      <h3 id="variable-{{ card.item.pk }}">{{ card.item.title }}</h3>
+      <p class="ayuda">{% if card.codes %}{{ card.codes }} · {% endif %}{{ card.unit|default:"sin unidad" }}</p>
     </header>
 
     {% if card.rows %}
       {% if card.chart.series %}
-        {% include "dashboards/_chart.html" with chart=card.chart chart_id=card.chart_id title=parameter.name image=card.image.0 image_title=card.image.1 %}
+        {% include "dashboards/_chart.html" with chart=card.chart chart_id=card.chart_id title=card.item.title image=card.image.0 image_title=card.image.1 %}
       {% else %}
         <p class="sin-datos">Sin datos en la gráfica.</p>
       {% endif %}
@@ -58,10 +57,11 @@
           </thead>
           <tbody>
             {% for row in card.rows %}
+              {% with decimals=row.variable.parameter.decimals %}
               <tr>
                 <th scope="row" class="serie">
                   <span class="forma forma--{{ row.shape }}" style="--color: {{ row.color }}" aria-hidden="true"></span>
-                  {{ row.variable.point }} <span class="serie__fuente">{{ row.variable.source }}</span>
+                  {% if card.parameters|length > 1 %}{{ row.variable.parameter.code }} · {% endif %}{{ row.variable.point }} <span class="serie__fuente">{{ row.variable.source }}</span>
                 </th>
                 <td>
                   <span class="valor">{{ row.latest.qualifier }}{{ row.latest.value|num:decimals }}</span>
@@ -83,24 +83,24 @@
                   {% else %}0 de {{ row.week_exceedance.checked }}{% endif %}
                 </td>
               </tr>
+              {% endwith %}
             {% endfor %}
           </tbody>
         </table>
       </div>
-    {% elif card.item.points.all %}
+    {% elif card.item.items.all %}
       <p class="sin-datos">Sin datos en los últimos 30 días.</p>
     {% else %}
-      <p class="sin-datos">No tiene puntos configurados.</p>
+      <p class="sin-datos">No tiene series configuradas.</p>
     {% endif %}
 
     {% if card.stale %}
       <p class="ayuda panel__pie">
         Sin datos en los últimos 30 días:
-        {% for variable, latest in card.stale %}{{ variable.point }} · {{ variable.source }} ({% if latest %}último: {{ latest|taken }}{% else %}sin datos{% endif %}){% if not forloop.last %}; {% endif %}{% endfor %}.
+        {% for variable, latest in card.stale %}{% if card.parameters|length > 1 %}{{ variable.parameter.code }} · {% endif %}{{ variable.point }} · {{ variable.source }} ({% if latest %}último: {{ latest|taken }}{% else %}sin datos{% endif %}){% if not forloop.last %}; {% endif %}{% endfor %}.
       </p>
     {% endif %}
   </section>
-  {% endwith %}
 {% empty %}
   <section class="tarjeta vacio">
     <p>No hay variables importantes configuradas.</p>

@@ -446,6 +446,16 @@ p.sin-datos { margin: 8px 0 12px; }
 /* The parameter stays in view when the cells scroll sideways (narrow screens). */
 .rejilla__parametro-fila { position: sticky; left: 0; z-index: 1; }
 .rejilla__inicio-punto > * { border-top: 2px solid var(--border); }
+/* The title of a section of the form («Fase I», «DIAPAC»), across the whole table. */
+.rejilla__seccion > th {
+  padding: 10px 8px 6px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.rejilla__seccion + .rejilla__inicio-punto > * { border-top: 0; }
 
 .celda { padding: 0; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); }
 .celda__valor {

@@ -70,11 +70,19 @@ class CatalogLoader:
         return self
 
 
+# Old names of a source that the maps still use. The historical workbook is Nalco's, which is now
+# called Ecolab (docs/REQUISITOS.md §15); this goes away with the Excel import (§14).
+SOURCE_ALIASES = {"nalco": "ecolab"}
+
+
 class CatalogIndex:
-    """Looks up catalog entries by code, ignoring case; points also by alias."""
+    """Looks up catalog entries by code, ignoring case; points also by alias, sources by their old name."""
 
     def __init__(self):
         self.sources = {s.code.lower(): s for s in Source.objects.all()}
+        for old, new in SOURCE_ALIASES.items():
+            if new in self.sources:
+                self.sources.setdefault(old, self.sources[new])
         self.parameters = {p.code.lower(): p for p in Parameter.objects.all()}
         self.points = {p.code.lower(): p for p in SamplingPoint.objects.all()}
         for alias in PointAlias.objects.select_related("point"):

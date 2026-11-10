@@ -13,10 +13,9 @@ from django.urls import reverse
 from django.utils import timezone
 from openpyxl import load_workbook
 
-from apps.catalog.models import Limit, Parameter, SamplingPoint, Variable
-from apps.dashboards.admin import ImportantVariableForm
+from apps.catalog.models import Limit, Parameter, SamplingPoint, Source, Variable
 from apps.dashboards.charts import epoch
-from apps.dashboards.models import ImportantVariable
+from apps.dashboards.models import ImportantVariable, ImportantVariableItem
 from apps.dashboards.stats import LimitBook, Period, Sample, aggregate, describe, load_samples, within
 from apps.measurements.models import Measurement, Origin, TimePrecision, period_start
 
@@ -52,11 +51,16 @@ def entry(db):
     return SamplingPoint.objects.create(code="BA-4001", name="Entrada a la PTAR")
 
 
-@pytest.fixture
-def phenols_card(phenols, outlet, entry):
-    item = ImportantVariable.objects.create(parameter=phenols, order=1)
-    item.points.set([entry, outlet])
+def card(title, variables, order=1):
+    item = ImportantVariable.objects.create(title=title, order=order)
+    for position, variable in enumerate(variables, start=1):
+        ImportantVariableItem.objects.create(card=item, variable=variable, order=position)
     return item
+
+
+@pytest.fixture
+def phenols_card(phenols_biota):
+    return card("Fenoles", [phenols_biota])
 
 
 def page(client, **params):
@@ -195,20 +199,29 @@ class TestImportantVariables:
         assert "▲ 1 de 2" in html
         assert "Límite de vertimiento: ≤ 0,2 mg/L" in html
 
-    def test_only_the_configured_points_are_shown(self, admin_user, admin_client, phenols, biota, outlet, phenols_biota):
+    def test_only_the_chosen_series_are_shown(self, admin_user, admin_client, phenols_card, phenols, biota, outlet, phenols_biota, ecolab):
         other = SamplingPoint.objects.create(code="SE-3010")
-        item = ImportantVariable.objects.create(parameter=phenols)
-        item.points.set([outlet])
         measure(phenols_biota, admin_user, at(DAY, 7), 0.1)
         measure(Variable.objects.create(point=other, parameter=phenols, source=biota), admin_user, at(DAY, 7), 4.2)
+        # Another source at the same point is not shown unless it is chosen too (decided on 2026-11-09).
+        measure(Variable.objects.create(point=outlet, parameter=phenols, source=ecolab), admin_user, at(DAY, 9), 0.12)
         html = page(admin_client, end=DAY.isoformat())
-        assert "BA-4010" in html and "SE-3010" not in html
+        assert "BA-4010" in html and "BIOTA</span>" in html
+        assert "SE-3010" not in html and "Ecolab</span>" not in html
 
-    def test_every_source_at_a_point_is_shown(self, admin_user, admin_client, phenols_card, phenols_biota, outlet, phenols, nalco):
-        measure(phenols_biota, admin_user, at(DAY, 7), 0.1)
-        measure(Variable.objects.create(point=outlet, parameter=phenols, source=nalco), admin_user, at(DAY, 9), 0.12)
+    def test_a_card_may_have_several_parameters_with_the_same_unit(self, admin_user, admin_client, biota, entry, outlet):
+        tss = Parameter.objects.create(code="SST", name="Sólidos suspendidos totales", unit="mg/L", decimals=1)
+        ss = Parameter.objects.create(code="SS", name="Sólidos suspendidos", unit="mg/L", decimals=1)
+        ecolab_tss = Variable.objects.create(point=entry, parameter=tss, source=biota)
+        lab_ss = Variable.objects.create(point=outlet, parameter=ss, source=biota)
+        card("Sólidos suspendidos totales", [ecolab_tss, lab_ss])
+        measure(ecolab_tss, admin_user, at(DAY, 7), 120)
+        measure(lab_ss, admin_user, at(DAY, 7), 18)
         html = page(admin_client, end=DAY.isoformat())
-        assert "BIOTA</span>" in html and "Nalco</span>" in html
+        assert ">Sólidos suspendidos totales</h3>" in html and "SST, SS · mg/L" in html
+        assert "SST · BA-4001" in html and "SS · BA-4010" in html
+        chart = json.loads(re.search(r'<script id="grafica-\d+" type="application/json">(.*?)</script>', html).group(1))
+        assert len(chart["series"]) == 2
 
     def test_series_without_recent_data_go_to_the_footnote(self, admin_user, admin_client, phenols_card, phenols_biota):
         measure(phenols_biota, admin_user, at(days_before(60), 7), 0.1)
@@ -233,33 +246,50 @@ class TestImportantVariables:
 
 
 class TestImportantVariableAdmin:
-    def test_at_most_eight_points(self, phenols):
-        points = [SamplingPoint.objects.create(code=f"P-{i}") for i in range(9)]
-        form = ImportantVariableForm(data={"parameter": phenols.pk, "order": 1, "points": [p.pk for p in points]})
-        assert not form.is_valid()
-        assert "Hasta 8 puntos" in str(form.errors["points"])
-        form = ImportantVariableForm(data={"parameter": phenols.pk, "order": 1, "points": [p.pk for p in points[:8]]})
-        assert form.is_valid()
+    def post(self, client, variables):
+        data = {"title": "Prueba", "order": 1, "items-TOTAL_FORMS": str(len(variables)), "items-INITIAL_FORMS": "0"}
+        for n, variable in enumerate(variables):
+            data[f"items-{n}-variable"] = variable.pk
+            data[f"items-{n}-order"] = n
+        return client.post(reverse("admin:dashboards_importantvariable_add"), data)
 
-    def test_changes_are_audited(self, admin_client, phenols, outlet):
+    def test_a_card_is_saved_and_audited(self, admin_client, phenols_biota):
         from apps.core.models import AuditEntry
 
-        response = admin_client.post(
-            reverse("admin:dashboards_importantvariable_add"), {"parameter": phenols.pk, "order": 1, "points": [outlet.pk]}
-        )
-        assert response.status_code == 302
+        assert self.post(admin_client, [phenols_biota]).status_code == 302
+        assert ImportantVariable.objects.get().items.count() == 1
         entry = AuditEntry.objects.get(object_type="variable importante")
-        assert entry.changes["Puntos"] == ["", "BA-4010"]
+        assert entry.changes["Serie de la tarjeta «BA-4010 · Fenoles · BIOTA»"] == ["", "agregado"]
+
+    def test_at_most_eight_points_and_one_unit(self, admin_client, phenols, biota):
+        variables = [
+            Variable.objects.create(point=SamplingPoint.objects.create(code=f"P-{n}"), parameter=phenols, source=biota)
+            for n in range(9)
+        ]
+        assert "Hasta 8 puntos" in self.post(admin_client, variables).content.decode()
+        temperature = Parameter.objects.create(code="Temperatura", name="Temperatura", unit="°C")
+        mixed = [variables[0], Variable.objects.create(point=variables[1].point, parameter=temperature, source=biota)]
+        assert "la misma unidad" in self.post(admin_client, mixed).content.decode()
+        assert self.post(admin_client, variables[:8]).status_code == 302
 
 
-class TestInitialImportantVariables:
-    def test_they_are_created_from_the_catalog_once(self, phenols, outlet, entry):
-        migration = importlib.import_module("apps.dashboards.migrations.0002_initial_important_variables")
-        migration.create_important_variables(django_apps, None)
-        migration.create_important_variables(django_apps, None)
-        item = ImportantVariable.objects.get()
-        assert item.parameter == phenols
-        assert {p.code for p in item.points.all()} == {"BA-4001", "BA-4010"}  # BA-4008 is not in this catalog
+class TestImportantVariablesOf20261109:
+    def test_the_cards_their_order_and_their_series(self, biota, ecolab, entry, outlet, phenols):
+        labviewer = Source.objects.create(code="Labviewer", name="Laboratorio central")
+        ph = Parameter.objects.create(code="pH", name="pH")
+        discharge = SamplingPoint.objects.create(code="BA-4010 vertimiento")
+        ph_ecolab = Variable.objects.create(point=entry, parameter=ph, source=ecolab)
+        ph_biota = Variable.objects.create(point=entry, parameter=ph, source=biota)  # left out of pH
+        phenols_biota = Variable.objects.create(point=outlet, parameter=phenols, source=biota)
+        phenols_lab = Variable.objects.create(point=discharge, parameter=phenols, source=labviewer)
+        old = card("pH", [ph_ecolab, ph_biota], order=3)
+        migration = importlib.import_module("apps.dashboards.migrations.0006_important_variables_2026_11_09")
+        migration.configure(django_apps, None)
+        migration.configure(django_apps, None)
+        cards = {c.title: [item.variable for item in c.items.all()] for c in ImportantVariable.objects.all()}
+        assert list(cards) == ["pH", "Fenoles"]  # in the decided order; the rest have no variables here
+        assert ImportantVariable.objects.get(title="pH").pk == old.pk and cards["pH"] == [ph_ecolab]
+        assert cards["Fenoles"] == [phenols_biota, phenols_lab]
 
 
 class TestExplorer:
@@ -313,21 +343,21 @@ class TestExplorer:
         html = engineer_client.get(reverse("explorer"), self.query(phenols, points)).content.decode()
         assert "Elige hasta 8 puntos" in html
 
-    def test_only_the_parameters_points_and_sources_are_offered(self, engineer_client, phenols_biota, phenols, ph, nalco):
+    def test_only_the_parameters_points_and_sources_are_offered(self, engineer_client, phenols_biota, phenols, ph, ecolab):
         other = SamplingPoint.objects.create(code="SE-3010")
-        Variable.objects.create(point=other, parameter=ph, source=nalco)
+        Variable.objects.create(point=other, parameter=ph, source=ecolab)
         html = engineer_client.get(reverse("explorer_options"), {"prefix": "p1", "p1-parameter": phenols.pk}).content.decode()
         assert "BA-4010" in html and "BIOTA" in html
-        assert "SE-3010" not in html and "Nalco" not in html
+        assert "SE-3010" not in html and "Ecolab" not in html
         assert "Elige al menos un punto" not in html  # just chosen: not an error yet
 
-    def test_the_chosen_sources_filter_the_series(self, admin_user, engineer_client, phenols_biota, phenols, outlet, nalco):
-        nalco_phenols = Variable.objects.create(point=outlet, parameter=phenols, source=nalco)
+    def test_the_chosen_sources_filter_the_series(self, admin_user, engineer_client, phenols_biota, phenols, outlet, ecolab):
+        ecolab_phenols = Variable.objects.create(point=outlet, parameter=phenols, source=ecolab)
         measure(phenols_biota, admin_user, at(DAY, 7), 0.1)
-        measure(nalco_phenols, admin_user, at(DAY, 7), 0.2)
-        query = self.query(phenols, [outlet], start=DAY, end=DAY, sources=[nalco.pk])
+        measure(ecolab_phenols, admin_user, at(DAY, 7), 0.2)
+        query = self.query(phenols, [outlet], start=DAY, end=DAY, sources=[ecolab.pk])
         html = engineer_client.get(reverse("explorer"), query).content.decode()
-        assert "Nalco</span>" in html and "BIOTA</span>" not in html
+        assert "Ecolab</span>" in html and "BIOTA</span>" not in html
 
     def test_long_ranges_are_aggregated_automatically(self, engineer_client, phenols_biota, phenols, outlet):
         query = self.query(phenols, [outlet], start=days_before(365), end=DAY)
@@ -411,9 +441,9 @@ class TestExplorer:
         [limit] = engineer_client.get(reverse("explorer"), query).context["exploration"].charts[0].chart["limits"]
         assert limit["parameter"] == 1 and limit["text"].startswith("Fenoles · BA-4010")
 
-    def test_the_options_of_a_block(self, engineer_client, phenols_biota, phenols, ph, nalco):
+    def test_the_options_of_a_block(self, engineer_client, phenols_biota, phenols, ph, ecolab):
         other = SamplingPoint.objects.create(code="SE-3010")
-        Variable.objects.create(point=other, parameter=ph, source=nalco)
+        Variable.objects.create(point=other, parameter=ph, source=ecolab)
         html = engineer_client.get(reverse("explorer_options"), {"prefix": "p2", "p2-parameter": ph.pk}).content.decode()
         assert f'name="p2-points" value="{other.pk}"' in html and 'name="p2-sources"' in html
         assert "BA-4010" not in html and "BIOTA" not in html

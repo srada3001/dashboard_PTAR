@@ -8,7 +8,6 @@ from django.urls import reverse
 from django.utils import timezone
 from openpyxl import load_workbook
 
-from apps.exports import views as export_views
 from apps.exports import weekly, workbook
 from apps.exports.middleware import WeeklyExportMiddleware
 from apps.exports.models import WeeklyExport
@@ -41,15 +40,15 @@ def exports_dir(settings, tmp_path):
 
 
 @pytest.fixture
-def data(admin_user, phenols_biota, outlet, phenols, nalco):
+def data(admin_user, phenols_biota, outlet, phenols, ecolab):
     from apps.catalog.models import Variable
 
-    nalco_phenols = Variable.objects.create(point=outlet, parameter=phenols, source=nalco)
+    ecolab_phenols = Variable.objects.create(point=outlet, parameter=phenols, source=ecolab)
     measure(phenols_biota, admin_user, at(datetime.date(2025, 12, 31), 7), 0.1, qualifier="<")
     measure(phenols_biota, admin_user, at(datetime.date(2026, 10, 18), 16), 0.3)
     measure(phenols_biota, admin_user, period_start(datetime.date(2026, 10, 17), TimePrecision.DAY), 0.2, precision=TimePrecision.DAY)
-    measure(nalco_phenols, admin_user, at(datetime.date(2026, 10, 18), 16), 0.25)
-    measure(nalco_phenols, admin_user, at(datetime.date(2026, 10, 18), 17), 99, suspect=True)
+    measure(ecolab_phenols, admin_user, at(datetime.date(2026, 10, 18), 16), 0.25)
+    measure(ecolab_phenols, admin_user, at(datetime.date(2026, 10, 18), 17), 99, suspect=True)
     measure(phenols_biota, admin_user, at(MONDAY, 7), 0.4)  # after the weekly cut
 
 
@@ -73,11 +72,11 @@ class TestWorkbooks:
     def test_wide_one_sheet_per_source_without_suspect_values(self, data):
         count, book = written([workbook.WIDE], workbook.measurements(end=weekly.week_cut(MONDAY)))
         assert count == 4
-        assert book.sheetnames == ["Léeme", "BIOTA", "Nalco"]
+        assert book.sheetnames == ["Léeme", "BIOTA", "Ecolab"]
         biota = rows(book, "BIOTA")
         assert biota[0] == ("Fecha", "Hora", "BA-4010 · Fenoles (mg/L)")
         assert [r[1:] for r in biota[1:]] == [("07:00", "<0,1"), (None, 0.2), ("16:00", 0.3)]
-        assert rows(book, "Nalco")[1:] == [(datetime.datetime(2026, 10, 18), "16:00", 0.25)]
+        assert rows(book, "Ecolab")[1:] == [(datetime.datetime(2026, 10, 18), "16:00", 0.25)]
 
 
 class TestWeekly:
@@ -91,7 +90,7 @@ class TestWeekly:
         assert export.status == WeeklyExport.Status.DONE
         assert export.file_name == "datos_PTAR_hasta_2026-10-18.xlsx" and export.measurements == 5
         book = load_workbook(exports_dir / export.file_name, read_only=True)
-        assert book.sheetnames == ["Léeme", "Mediciones 2025", "Mediciones 2026", "BIOTA", "Nalco"]
+        assert book.sheetnames == ["Léeme", "Mediciones 2025", "Mediciones 2026", "BIOTA", "Ecolab"]
         assert weekly.ensure_current(at(MONDAY, 9), background=False) is None
 
     def test_someone_preparing_it_is_left_alone_unless_it_died(self, exports_dir):
@@ -128,46 +127,43 @@ class TestWeekly:
 
 
 class TestPages:
-    def test_readers_only(self, engineer_client, capturer_client):
-        assert engineer_client.get(reverse("exports")).status_code == 200
-        for name in ("exports", "exports_download", "exports_weekly"):
-            assert capturer_client.get(reverse(name)).status_code == 403
+    def test_the_administrator_only(self, admin_client, engineer_client, capturer_client):
+        assert admin_client.get(reverse("exports")).status_code == 200
+        for client in (engineer_client, capturer_client):
+            for name in ("exports", "exports_weekly"):
+                assert client.get(reverse(name)).status_code == 403
+            assert client.get(reverse("exports_weekly_download", args=[1])).status_code == 403
+        # Engineers do not see the tab, but keep the rest of the reading menu.
+        menu = engineer_client.get(reverse("important_variables")).content.decode()
+        assert ">Exportaciones</a>" not in menu and ">Explorador</a>" in menu
+        assert ">Exportaciones</a>" in admin_client.get(reverse("important_variables")).content.decode()
 
-    def test_download_now(self, data, engineer_client, biota):
-        params = {"start": "2026-10-17", "end": "2026-10-18", "shape": "long", "sources": [biota.pk]}
-        response = engineer_client.get(reverse("exports_download"), params)
-        assert response.status_code == 200
-        assert response["Content-Disposition"] == 'attachment; filename="datos_PTAR_largo_2026-10-17_2026-10-18.xlsx"'
-        book = load_workbook(io.BytesIO(b"".join(response.streaming_content)), read_only=True)
-        assert [r[6] for r in rows(book, "Mediciones 2026")[1:]] == [0.2, 0.3]
+    def test_only_the_weekly_file(self, admin_client):
+        page = admin_client.get(reverse("exports")).content.decode()
+        assert "Archivo semanal" in page and "Exportar ahora" not in page
+        assert admin_client.get("/exportaciones/descargar/").status_code == 404
 
-    def test_too_much_at_once_points_to_the_weekly_file(self, data, engineer_client, monkeypatch):
-        monkeypatch.setattr(export_views, "MAX_AT_ONCE", 2)
-        response = engineer_client.get(reverse("exports_download"), {"start": "2025-01-01", "end": "2026-10-19", "shape": "wide"})
-        assert response.status_code == 400
-        assert "Son 6 mediciones; al momento se descargan hasta 2. Acorta las fechas, elige menos fuentes" in response.content.decode()
-
-    def test_weekly_files_are_listed_and_downloaded(self, data, exports_dir, engineer_client):
+    def test_weekly_files_are_listed_and_downloaded(self, data, exports_dir, admin_client):
         export = weekly.ensure_current(at(MONDAY, 0), background=False)
-        page = engineer_client.get(reverse("exports")).content.decode()
+        page = admin_client.get(reverse("exports")).content.decode()
         assert "Domingo 2026-10-18" in page and "Descargar" in page
-        response = engineer_client.get(reverse("exports_weekly_download", args=[export.pk]))
+        response = admin_client.get(reverse("exports_weekly_download", args=[export.pk]))
         assert response["Content-Disposition"] == 'attachment; filename="datos_PTAR_hasta_2026-10-18.xlsx"'
         content = b"".join(response.streaming_content)
         assert content == (exports_dir / export.file_name).read_bytes()
 
-    def test_a_file_being_prepared_is_refreshed(self, engineer_client):
+    def test_a_file_being_prepared_is_refreshed(self, admin_client):
         WeeklyExport.objects.create(week=MONDAY, status=WeeklyExport.Status.RUNNING, started_at=timezone.now())
-        page = engineer_client.get(reverse("exports_weekly")).content.decode()
+        page = admin_client.get(reverse("exports_weekly")).content.decode()
         assert "Preparándose" in page and 'hx-trigger="every 5s"' in page
-        assert engineer_client.get(reverse("exports_weekly_download", args=[1])).status_code == 404
+        assert admin_client.get(reverse("exports_weekly_download", args=[1])).status_code == 404
 
 
 class TestExplorerExport:
     def test_too_much_at_once_goes_back_with_a_message(self, data, engineer_client, phenols, outlet, monkeypatch):
-        from apps.dashboards import views as dashboard_views
+        from apps.dashboards import export as explorer_export
 
-        monkeypatch.setattr(dashboard_views, "MAX_AT_ONCE", 1)
+        monkeypatch.setattr(explorer_export, "MAX_AT_ONCE", 1)
         query = {"p1-parameter": phenols.pk, "p1-points": [outlet.pk], "start": "2025-01-01", "end": "2026-10-19"}
         response = engineer_client.get(reverse("explorer_export"), query, follow=True)
         assert "archivo semanal" in response.content.decode()

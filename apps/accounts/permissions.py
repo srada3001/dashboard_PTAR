@@ -8,12 +8,25 @@ from django.core.exceptions import PermissionDenied
 
 
 def reader_required(view):
-    """Views, charts and exports: administrators and engineers. Capturers read nothing."""
+    """Views and charts: administrators and engineers. Capturers read nothing."""
 
     @login_required
     @wraps(view)
     def wrapper(request, *args, **kwargs):
         if not request.user.can_read:
+            raise PermissionDenied
+        return view(request, *args, **kwargs)
+
+    return wrapper
+
+
+def admin_required(view):
+    """The administrator only: the Exportaciones page (decided on 2026-11-09)."""
+
+    @login_required
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_admin:
             raise PermissionDenied
         return view(request, *args, **kwargs)
 

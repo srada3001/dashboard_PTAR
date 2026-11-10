@@ -1,9 +1,9 @@
 header,action,point,parameter,source,time,frequency,note
 Fecha,date,,,,,,
-ClarifiA Flujo,import,Clarificador A,Flujo,Por confirmar,day,,
-ClarifiB Flujo,import,Clarificador B,Flujo,Por confirmar,day,,
-ClarifiC Flujo,import,Clarificador C,Flujo,Por confirmar,day,,
-ClarifiD Flujo,import,Clarificador D,Flujo,Por confirmar,day,,
+ClarifiA Flujo,import,BA-4005A,Flujo,Por confirmar,day,,
+ClarifiB Flujo,import,BA-4005B,Flujo,Por confirmar,day,,
+ClarifiC Flujo,skip,,,,,,Promedio diario del flujo de PI de BA-4005C: repetido; se usa el de PI por hora (decidido el 2026-11-09).
+ClarifiD Flujo,skip,,,,,,Promedio diario del flujo de PI de BA-4005D: repetido; se usa el de PI por hora (decidido el 2026-11-09).
 BA4002 Fenol,import,BA-4002,Fenoles,Labviewer,day,,
 BA4002 RSH,import,BA-4002,RSH,Labviewer,day,,
 BA4002 H2S,import,BA-4002,H2S,Labviewer,day,,
@@ -71,32 +71,32 @@ DNF ENTRADA G&A,import,DNF entrada,G&A,Labviewer,day,,
 DNF ENTRADA SS,import,DNF entrada,SS,Labviewer,day,,
 DNF SALIDA G&A,import,DNF salida,G&A,Labviewer,day,,
 DNF SALIDA SS,import,DNF salida,SS,Labviewer,day,,
-BA4010 G&A ,import,BA-4010 clarificada,G&A,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 Ph,import,BA-4010 clarificada,pH,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA4010 Fenol ,import,BA-4010 clarificada,Fenoles,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA4010 RSH ,import,BA-4010 clarificada,RSH,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA4010 H2S ,import,BA-4010 clarificada,H2S,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA4010 SS ,import,BA-4010 clarificada,SS,Labviewer,day,,"El encabezado de grupo dice ST, pero la columna se llama SS y sus valores son de SS."
-BA4010 CL,import,BA-4010 clarificada,Cloruros,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA4010  CONDUCTIVIDAD,import,BA-4010 clarificada,Conductividad,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 CADMIO ,import,BA-4010 clarificada,Cd,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 COBRE ,import,BA-4010 clarificada,Cu,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 CROMO ,import,BA-4010 clarificada,Cr,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 FE,import,BA-4010 clarificada,Hierro,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 NIQUEL,import,BA-4010 clarificada,Ni,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 PLOMO,import,BA-4010 clarificada,Pb,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 SELENIO,import,BA-4010 clarificada,Se,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 VANADIO,import,BA-4010 clarificada,V,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 ZINC,import,BA-4010 clarificada,Zn,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA4010 NH3 ,import,BA-4010 clarificada,NH3,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 NITROGENO TOTAL,import,BA-4010 clarificada,N total,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 FOSFORO TOTAL,import,BA-4010 clarificada,P total,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010  T°,import,BA-4010 clarificada,Temperatura,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010  S,import,BA-4010 clarificada,S en aguas,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010  SULFATO,import,BA-4010 clarificada,Sulfatos,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 DBO,import,BA-4010 clarificada,DBO,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-BA-4010 DQO,import,BA-4010 clarificada,DQO,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
-Columna4,import,BA-4010 clarificada,Conductividad,Labviewer,day,,"Encabezado de grupo: CONDUCTIVIDAD A 25 C, en el bloque de BA-4010 clarificada."
+BA4010 G&A ,import,BA-4010 vertimiento,G&A,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 Ph,import,BA-4010 vertimiento,pH,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA4010 Fenol ,import,BA-4010 vertimiento,Fenoles,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA4010 RSH ,import,BA-4010 vertimiento,RSH,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA4010 H2S ,import,BA-4010 vertimiento,H2S,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA4010 SS ,import,BA-4010 vertimiento,SS,Labviewer,day,,"El encabezado de grupo dice ST, pero la columna se llama SS y sus valores son de SS."
+BA4010 CL,import,BA-4010 vertimiento,Cloruros,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA4010  CONDUCTIVIDAD,import,BA-4010 vertimiento,Conductividad,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 CADMIO ,import,BA-4010 vertimiento,Cd,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 COBRE ,import,BA-4010 vertimiento,Cu,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 CROMO ,import,BA-4010 vertimiento,Cr,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 FE,import,BA-4010 vertimiento,Hierro,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 NIQUEL,import,BA-4010 vertimiento,Ni,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 PLOMO,import,BA-4010 vertimiento,Pb,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 SELENIO,import,BA-4010 vertimiento,Se,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 VANADIO,import,BA-4010 vertimiento,V,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 ZINC,import,BA-4010 vertimiento,Zn,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA4010 NH3 ,import,BA-4010 vertimiento,NH3,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 NITROGENO TOTAL,import,BA-4010 vertimiento,N total,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 FOSFORO TOTAL,import,BA-4010 vertimiento,P total,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010  T°,import,BA-4010 vertimiento,Temperatura,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010  S,import,BA-4010 vertimiento,S en aguas,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010  SULFATO,import,BA-4010 vertimiento,Sulfatos,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 DBO,import,BA-4010 vertimiento,DBO,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+BA-4010 DQO,import,BA-4010 vertimiento,DQO,Labviewer,day,,Bloque BA-4010 CLARIFICADA.
+Columna4,import,BA-4010 vertimiento,Conductividad,Labviewer,day,,"Encabezado de grupo: CONDUCTIVIDAD A 25 C, en el bloque BA-4010 CLARIFICADA."
 DIAPAC G&A,import,DIAPAC efluente,G&A,Labviewer,day,,
 DIAPAC SS,import,DIAPAC efluente,SS,Labviewer,day,,
 DIAPAC ST,import,DIAPAC efluente,ST,Labviewer,day,,

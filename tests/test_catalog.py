@@ -1,6 +1,8 @@
 from datetime import date
+import importlib
 
 import pytest
+from django.apps import apps as django_apps
 from django.core.exceptions import ValidationError
 
 from apps.catalog.models import (
@@ -65,8 +67,8 @@ class TestVariables:
         with pytest.raises(ValidationError, match="Ya existe una variable"):
             Variable(point=outlet, parameter=phenols, source=biota).full_clean()
 
-    def test_two_sources_of_the_same_thing_coexist(self, phenols_biota, outlet, phenols, nalco):
-        Variable(point=outlet, parameter=phenols, source=nalco).full_clean()
+    def test_two_sources_of_the_same_thing_coexist(self, phenols_biota, outlet, phenols, ecolab):
+        Variable(point=outlet, parameter=phenols, source=ecolab).full_clean()
 
     def test_shown_as_point_parameter_source(self, phenols_biota):
         assert str(phenols_biota) == "BA-4010 · Fenoles · BIOTA"
@@ -112,10 +114,30 @@ class TestLimits:
 
 
 class TestCaptureForms:
-    def test_variables_must_be_of_the_form_source(self, nalco_form, phenols_biota):
-        with pytest.raises(ValidationError, match="Es de la fuente BIOTA; el formato es de Nalco"):
-            CaptureFormVariable(form=nalco_form, variable=phenols_biota).full_clean()
+    def test_variables_must_be_of_the_form_source(self, ecolab_form, phenols_biota):
+        with pytest.raises(ValidationError, match="Es de la fuente BIOTA; el formato es de Ecolab"):
+            CaptureFormVariable(form=ecolab_form, variable=phenols_biota).full_clean()
 
     def test_a_variable_appears_once_per_form(self, biota_form, phenols_biota):
         with pytest.raises(ValidationError, match="La variable ya está en el formato"):
             CaptureFormVariable(form=biota_form, variable=phenols_biota).full_clean()
+
+
+class TestDischargeRename:
+    """Migration catalog/0005: «BA-4010 clarificada» becomes «BA-4010 vertimiento»."""
+
+    migration = importlib.import_module("apps.catalog.migrations.0005_rename_ba4010_discharge")
+
+    def test_the_point_keeps_its_variables_and_the_old_name_as_alias(self, phenols, biota):
+        point = SamplingPoint.objects.create(code="BA-4010 clarificada", name="Labviewer")
+        variable = Variable.objects.create(point=point, parameter=phenols, source=biota)
+        self.migration.rename(django_apps, None)
+        self.migration.rename(django_apps, None)
+        point.refresh_from_db()
+        assert point.code == "BA-4010 vertimiento"
+        assert list(point.variables.all()) == [variable]
+        assert [alias.alias for alias in point.aliases.all()] == ["BA-4010 clarificada"]
+
+    def test_nothing_changes_without_the_old_point(self):
+        self.migration.rename(django_apps, None)
+        assert not SamplingPoint.objects.exists()

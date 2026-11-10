@@ -110,11 +110,13 @@ def values(variable_label):
 class TestTable1:
     def test_values_hours_and_report(self, table1, maps, admin_user):
         [batch] = run(table1, admin_user, maps)
-        assert values("BA-4001 · pH · Nalco") == {
+        assert values("BA-4001 · pH · Ecolab") == {
             (hourly(3, 6), "", 7.2), (hourly(3, 7), "", 73.0), (hourly(3, 9), "", 6.8),
             (hourly(3, 10), "", 7.0), (hourly(4, 1), "", 7.3),
         }
-        assert values("DNF entrada · SST · Nalco") == {(hourly(3, 6), "", 120.0), (hourly(4, 1), "", 18.0), (hourly(4, 2), "", 19.0)}
+        assert values("DNF entrada · SST · Ecolab") == {(hourly(3, 6), "", 120.0), (hourly(4, 1), "", 18.0), (hourly(4, 2), "", 19.0)}
+        # The map still says «Nalco» (the workbook is Nalco's): it is Ecolab, not a new source.
+        assert not Source.objects.filter(code__iexact="Nalco").exists()
         counts, report = batch.counts, batch.report
         assert counts["imported"] == 8
         assert counts["nan"] == 3  # SB, 7,,4 and the date in a value cell
@@ -216,7 +218,7 @@ class TestMaps:
             [101, hourly(3, 7), 7.3],
         ]})
         [batch] = run(path, admin_user, maps)
-        assert values("BA-4001 · pH · Nalco") == {(hourly(3, 6), "", 7.2), (hourly(3, 7), "", 7.3)}
+        assert values("BA-4001 · pH · Ecolab") == {(hourly(3, 6), "", 7.2), (hourly(3, 7), "", 7.3)}
         assert batch.report["missing_headers"] == ["% remo"]
 
     def test_a_column_naming_something_outside_the_catalog_stops_the_import(self, tmp_path, admin_user):

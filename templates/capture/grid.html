@@ -60,7 +60,8 @@
         </tr>
       </thead>
       <tbody>
-        {% for variable, span, cells in grid.variable_rows %}
+        {% for variable, span, cells, section in grid.variable_rows %}
+          {% if section %}<tr class="rejilla__seccion"><th colspan="{{ grid.slots|length|add:2 }}" scope="rowgroup">{{ section }}</th></tr>{% endif %}
           <tr{% if span %} class="rejilla__inicio-punto"{% endif %}>
             {% if span %}<th class="rejilla__punto-fila" rowspan="{{ span }}" scope="rowgroup">{{ variable.point }}</th>{% endif %}
             <th class="rejilla__parametro-fila" scope="row">{{ variable.parameter.code }}{% if variable.parameter.unit %} <span>{{ variable.parameter.unit }}</span>{% endif %}</th>

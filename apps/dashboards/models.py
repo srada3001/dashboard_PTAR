@@ -3,26 +3,17 @@ a chart needs no programming (CLAUDE.md)."""
 
 from django.db import models
 
-from apps.catalog.models import Parameter, SamplingPoint, Variable
+from apps.catalog.models import Variable
 
 # One color per point on a chart; past eight, colors can no longer be told apart.
 MAX_POINTS = 8
 
 
 class ImportantVariable(models.Model):
-    """One card of «Variables importantes» (docs/REQUISITOS.md §7.1): a parameter at chosen points,
-    with every source that measures it there."""
+    """One card of «Variables importantes» (docs/REQUISITOS.md §7.1): chosen variables (point +
+    parameter + source) with the same unit, on one chart with their statistics."""
 
-    parameter = models.OneToOneField(
-        Parameter, on_delete=models.PROTECT, related_name="+", verbose_name="parámetro"
-    )
-    points = models.ManyToManyField(
-        SamplingPoint,
-        related_name="+",
-        verbose_name="puntos",
-        help_text=f"Los puntos que se grafican, hasta {MAX_POINTS} (uno por color). Se muestran todas las "
-        "fuentes que miden el parámetro en ellos. Para comparar otros puntos está el Explorador.",
-    )
+    title = models.CharField("título", max_length=120, unique=True, help_text="Por ejemplo, «Sólidos suspendidos totales».")
     order = models.PositiveSmallIntegerField("orden", default=0, help_text="Orden en que se presentan.")
 
     class Meta:
@@ -31,7 +22,27 @@ class ImportantVariable(models.Model):
         ordering = ["order", "pk"]
 
     def __str__(self):
-        return self.parameter.name
+        return self.title
+
+
+class ImportantVariableItem(models.Model):
+    card = models.ForeignKey(ImportantVariable, on_delete=models.CASCADE, related_name="items", verbose_name="tarjeta")
+    variable = models.ForeignKey(Variable, on_delete=models.PROTECT, related_name="+", verbose_name="variable")
+    order = models.PositiveSmallIntegerField("orden", default=0)
+
+    class Meta:
+        verbose_name = "serie de la tarjeta"
+        verbose_name_plural = "series de la tarjeta"
+        ordering = ["order", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["card", "variable"], name="importantvariableitem_unique",
+                violation_error_message="La variable ya está en la tarjeta.",
+            ),
+        ]
+
+    def __str__(self):
+        return str(self.variable)
 
 
 class WeeklyChart(models.Model):

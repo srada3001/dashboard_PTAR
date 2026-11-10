@@ -13,6 +13,7 @@
         <a class="tarjeta formato" href="{% url 'capture_grid' capture_form.pk %}">
           <span class="formato__fuente">{{ capture_form.source.code }}</span>
           <h3 class="formato__nombre">{{ capture_form.name }}</h3>
+          {% with sections=capture_form.sections %}{% if sections %}<p class="formato__detalle">{{ sections|join:" · " }}</p>{% endif %}{% endwith %}
           <p class="formato__detalle">
             {{ capture_form.get_schedule_display }} ·
             {% with total=capture_form.items.all|length %}{{ total }} variable{{ total|pluralize:"s" }}{% endwith %}

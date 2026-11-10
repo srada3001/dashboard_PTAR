@@ -1,7 +1,7 @@
 """The cards of «Variables importantes» (docs/REQUISITOS.md §7.1).
 
-Each card is a parameter at its points, every source that measures it there, up to a day (today by
-default): the chart of the last days, and per series the last value, the minimum and maximum of the
+Each card is a list of chosen variables (point + parameter + source, the same unit), up to a day
+(today by default): the chart of the last days, and per series the last value, the minimum and maximum of the
 last 7 days, the means of the last 7 and 30 days, and how many of the last 7 days' samples broke
 the limit in force on their date.
 """
@@ -52,23 +52,36 @@ class Card:
     chart: dict | None = None
     image: tuple = ("", "")  # (file name, title) of the chart downloaded as a PNG
 
+    parameters: list = field(default_factory=list)
+
     @property
-    def parameter(self):
-        return self.item.parameter
+    def unit(self):
+        return self.parameters[0].unit if self.parameters else ""
+
+    @property
+    def codes(self):
+        """"SST, SS": the parameters of the card, when they are not already its title."""
+        codes = ", ".join(parameter.code for parameter in self.parameters)
+        return "" if codes == self.item.title else codes
 
     @property
     def chart_id(self):
         return f"grafica-{self.item.pk}"
 
 
+def unique(items):
+    return list(dict.fromkeys(items))
+
+
 def build_card(item, last_day, chart_days):
-    parameter = item.parameter
-    points = list(item.points.all())
     card = Card(item)
-    if not points:
+    variables = [entry.variable for entry in item.items.all()]
+    if not variables:
         return card
-    variables = list(Variable.objects.filter(parameter=parameter, point__in=points).select_related("point", "source", "parameter"))
-    book = LimitBook(Limit.objects.filter(parameter=parameter, point__in=points).select_related("point", "parameter"))
+    points = unique(variable.point for variable in variables)
+    parameters = card.parameters = unique(variable.parameter for variable in variables)
+    limits = Limit.objects.filter(parameter__in=parameters, point__in=points).select_related("point", "parameter")
+    books = {parameter.pk: LimitBook([limit for limit in limits if limit.parameter_id == parameter.pk]) for parameter in parameters}
 
     chart_first = last_days(last_day, chart_days)
     month_first, week_first = last_days(last_day, 30), last_days(last_day, 7)
@@ -87,6 +100,7 @@ def build_card(item, last_day, chart_days):
         # Loaded up to the end of the last day, so the newest loaded value is the last one there is.
         latest = loaded[-1]
         week = within(month, week_first, last_day)
+        book = books[variable.parameter_id]
         card.rows.append(Row(
             variable=variable,
             color=colors[variable.point_id],
@@ -99,11 +113,11 @@ def build_card(item, last_day, chart_days):
         ))
 
     period = Period.DAY if chart_days >= DAILY_MEANS_FROM else None
-    card.chart = chart_data([parameter], points, variables, chart_samples, {parameter.pk: book}, chart_first, last_day, period)
-    card.image = image(parameter.name, parameter.unit, chart_first, last_day)
+    card.chart = chart_data(parameters, points, variables, chart_samples, books, chart_first, last_day, period)
+    card.image = image(item.title, card.unit, chart_first, last_day)
     return card
 
 
 def build_cards(last_day, chart_days):
-    items = ImportantVariable.objects.select_related("parameter").prefetch_related("points__area")
+    items = ImportantVariable.objects.prefetch_related("items__variable__point", "items__variable__parameter", "items__variable__source")
     return [build_card(item, last_day, chart_days) for item in items]

@@ -1,12 +1,17 @@
 """The capture grid of a form for a day (docs/REQUISITOS.md §6).
 
-Each variable has the cells of its frequency: one per hour, 07:00 and 16:00, a. m. and p. m., or one
-for the whole day. A form with many hours (Nalco) shows the hours as rows and the variables as
+Each variable has the cells of its frequency: one per hour, 07:00 and 16:00, only 07:00 (BIOTA),
+a. m. and p. m., or one for the whole day. A form with hourly variables (Ecolab) shows the hours as rows and the variables as
 columns, like today's sheet; the others show the variables as rows and their few cells as columns.
+A form may have sections (BIOTA: «Fase I» and, below it, «DIAPAC»), shown one below the other; the
+variables of a point always go together within their section, whatever their order in the admin.
 
-Who may change a value that is already there: the administrator and the engineer, any value of
-their forms; the capturer, only their own captures of the last 24 hours (decided on 2026-10-20).
-Anyone with the form sees every value of the day, so nothing is typed twice or overwritten.
+Who may change a value that is already there: the administrator, any; the engineer, any value of
+their forms registered in the last 48 hours; the capturer, only their own captures of the last 48
+hours. Who may fill an empty cell: the administrator, any; the engineer and the capturer, only
+samples of the last 48 hours. Only the administrator has no time limit (decided on 2026-11-09;
+before, the engineer had none and the capturer had 24 hours to correct). Anyone with the form sees
+every value of the day, so nothing is typed twice or overwritten.
 """
 
 import datetime
@@ -20,9 +25,11 @@ from apps.measurements.models import Measurement, TimePrecision, period_start
 from apps.measurements.records import version
 from apps.measurements.values import format_number
 
-EDIT_WINDOW = datetime.timedelta(hours=24)
-# More cells per variable than this, and the cells go in rows (the hours of Nalco).
-CELLS_AS_COLUMNS = 3
+# How far back an engineer or a capturer may correct captures and fill empty cells.
+EDIT_WINDOW = datetime.timedelta(hours=48)
+# More time columns than this, and they go in rows (the 24 hours of Ecolab). Without hourly
+# variables there are at most five: 07:00, 16:00, a. m., p. m. and the day (BIOTA).
+CELLS_AS_COLUMNS = 5
 
 
 @dataclass(frozen=True)
@@ -48,6 +55,7 @@ ORDER = list(SLOTS)
 SLOTS_BY_FREQUENCY = {
     Schedule.HOURLY: HOURS,
     Schedule.TWICE_DAILY: [HOURS[7], HOURS[16]],
+    Schedule.MORNING: [HOURS[7]],
     Schedule.AM_PM: [MORNING, AFTERNOON],
     Schedule.DAILY: [WHOLE_DAY],
     Schedule.OCCASIONAL: [WHOLE_DAY],
@@ -65,12 +73,29 @@ def display(measurement):
 
 def may_change(user, measurement, now):
     """(allowed, why not) for correcting or deleting a value that is already there."""
-    if measurement is None or user.role in (User.Role.ADMIN, User.Role.ENGINEER):
+    if measurement is None or user.is_admin:
         return True, ""
+    recent = measurement.created_at >= now - EDIT_WINDOW
+    if user.role == User.Role.ENGINEER:
+        if recent:
+            return True, ""
+        return False, "Solo puedes corregir capturas de las últimas 48 horas; más atrás, el administrador."
     own = measurement.created_by_id == user.pk and measurement.updated_by_id in (None, user.pk)
-    if own and measurement.created_at >= now - EDIT_WINDOW:
+    if own and recent:
         return True, ""
-    return False, "Solo puedes corregir tus propias capturas de las últimas 24 horas."
+    return False, "Solo puedes corregir tus propias capturas de las últimas 48 horas."
+
+
+def may_add(user, taken_at, now):
+    """(allowed, why not) for filling an empty cell: by the time of its sample."""
+    if user.is_admin or taken_at >= now - EDIT_WINDOW:
+        return True, ""
+    return False, "Solo puedes llenar datos de las últimas 48 horas."
+
+
+def may_write(user, measurement, taken_at, now):
+    """(allowed, why not) for a cell: correcting what is there, or filling it when it is empty."""
+    return may_change(user, measurement, now) if measurement is not None else may_add(user, taken_at, now)
 
 
 def note(measurement):
@@ -127,6 +152,7 @@ class Grid:
     variables: list
     slots: list
     cells: dict = field(default_factory=dict)  # {(variable id, slot key): Cell}
+    sections: dict = field(default_factory=dict)  # {variable id: section name}
 
     @property
     def slots_as_rows(self):
@@ -149,29 +175,45 @@ class Grid:
         """[(slot, [cell per variable])]: the hours as rows."""
         return [(slot, [self.cell(variable, slot) for variable in self.variables]) for slot in self.slots]
 
+    def section(self, variable):
+        return self.sections.get(variable.pk, "")
+
     def variable_rows(self):
-        """[(variable, rows of its point or 0 when not the first, [cell per slot])]."""
+        """[(variable, rows of its point or 0 when not the first, [cell per slot], section title
+        when the variable starts a section or "")]."""
+        group = lambda variable: (self.section(variable), variable.point)  # noqa: E731
         rows = []
         for index, variable in enumerate(self.variables):
-            first = index == 0 or self.variables[index - 1].point != variable.point
+            previous = self.variables[index - 1] if index else None
             span = 0
-            if first:
+            if previous is None or group(previous) != group(variable):
                 span = 1
-                while index + span < len(self.variables) and self.variables[index + span].point == variable.point:
+                while index + span < len(self.variables) and group(self.variables[index + span]) == group(variable):
                     span += 1
-            rows.append((variable, span, [self.cell(variable, slot) for slot in self.slots]))
+            title = ""
+            if self.section(variable) and (previous is None or self.section(previous) != self.section(variable)):
+                title = self.section(variable)
+            rows.append((variable, span, [self.cell(variable, slot) for slot in self.slots], title))
         return rows
+
+
+def grouped(items):
+    """The items of a form with each section together, and within it each point together, in the
+    order they first appear."""
+    first_section, first_point = {}, {}
+    for index, item in enumerate(items):
+        first_section.setdefault(item.section, index)
+        first_point.setdefault((item.section, item.variable.point_id), index)
+    return sorted(items, key=lambda item: (first_section[item.section], first_point[(item.section, item.variable.point_id)]))
 
 
 def build(form, day, user, now=None):
     now = now or timezone.now()
-    variables = [
-        item.variable
-        for item in form.items.select_related("variable__point__area", "variable__parameter", "variable__source")
-    ]
+    items = grouped(list(form.items.select_related("variable__point__area", "variable__parameter", "variable__source")))
+    variables = [item.variable for item in items]
     keys = {slot.key for variable in variables for slot in slots_of(variable)}
     slots = [SLOTS[key] for key in ORDER if key in keys]
-    grid = Grid(form=form, day=day, variables=variables, slots=slots)
+    grid = Grid(form=form, day=day, variables=variables, slots=slots, sections={item.variable_id: item.section for item in items})
     instants = {slot.key: slot.taken_at(day) for slot in slots}
     existing = {
         (m.variable_id, m.taken_at): m
@@ -188,7 +230,7 @@ def build(form, day, user, now=None):
                 taken_at=taken_at,
                 measurement=measurement,
                 future=taken_at > now,
-                locked=may_change(user, measurement, now)[1],
+                locked=may_write(user, measurement, taken_at, now)[1],
             )
     return grid
 
