@@ -126,7 +126,7 @@ class User(AbstractBaseUser):
 
     @property
     def can_read(self):
-        """Views and charts. A capturer never reads."""
+        """Views, charts and exports. A capturer never reads."""
         return self.role in (self.Role.ADMIN, self.Role.ENGINEER)
 
     def allowed_capture_forms(self):

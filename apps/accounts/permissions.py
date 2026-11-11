@@ -8,7 +8,7 @@ from django.core.exceptions import PermissionDenied
 
 
 def reader_required(view):
-    """Views and charts: administrators and engineers. Capturers read nothing."""
+    """Views, charts and exports: administrators and engineers. Capturers read nothing."""
 
     @login_required
     @wraps(view)
@@ -21,7 +21,7 @@ def reader_required(view):
 
 
 def admin_required(view):
-    """The administrator only: the Exportaciones page (decided on 2026-11-09)."""
+    """The administrator only: the weekly file of Exportaciones, with the whole history."""
 
     @login_required
     @wraps(view)

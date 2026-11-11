@@ -100,13 +100,13 @@ La hoja de límites de la tabla 1 (§16), «Datos Calidad Fase 1» y «Programa 
 
 | Rol | Lectura (vistas y gráficas) | Captura | Además |
 |---|---|---|---|
-| Administrador | Todo | Todo, sin límite de tiempo | Gestiona usuarios, roles, ámbitos, catálogos, rangos, límites y formatos de captura; corrige y borra cualquier dato; **es el único que ve Exportaciones** |
-| Ingeniero | Todo | Solo en sus ámbitos (puede no tener ninguno: entonces es de solo lectura) | Corrige los datos de sus ámbitos de las últimas 48 horas, con historial |
+| Administrador | Todo | Todo, sin límite de tiempo | Gestiona usuarios, roles, ámbitos, catálogos, rangos, límites y formatos de captura; corrige y borra cualquier dato; **es el único que descarga el archivo semanal** (el histórico completo) |
+| Ingeniero | Todo | Solo en sus ámbitos (puede no tener ninguno: entonces es de solo lectura) | Corrige los datos de sus ámbitos de las últimas 48 horas, con historial; exporta por laboratorio y fechas |
 | Capturista | **Ninguna** | Solo en sus ámbitos | Pensado para personal de los laboratorios |
 
 - **Ámbito de captura:** los formatos de captura (§6) que un usuario puede llenar. Los asigna el administrador.
 - **Una persona nueva es capturista** hasta que el administrador le asigne otro rol: por defecto, el rol con menos permisos.
-- **Exportaciones es solo del administrador** (decidido el 2026-11-09). Los ingenieros siguen descargando en Excel lo que ven en el Explorador y en ICAV, y todas las gráficas como imagen.
+- **Exportaciones la ven el administrador y los ingenieros** (decidido el 2026-11-11; del 2026-11-09 a esa fecha era solo del administrador): los dos exportan por laboratorio y fechas; el archivo semanal, con el histórico completo, sigue siendo solo del administrador. Los ingenieros también descargan en Excel lo que ven en el Explorador y en ICAV, y todas las gráficas como imagen.
 - **El capturista no tiene acceso de lectura:** no ve vistas, gráficas, exportaciones ni datos de otros ámbitos. Al entrar va directo a Captura.
   - En sus formatos sí ve lo ya registrado para la fecha que elige, para no duplicar ni pisar datos.
   - Puede corregir o borrar **sus propias capturas de las últimas 48 horas**, solo en su ámbito. Lo demás lo ve, pero no lo cambia.
@@ -336,12 +336,15 @@ Las gráficas semanales que hoy se arman con las tablas dinámicas de la hoja «
 
 - **Respaldo continuo:** Litestream copia cada cambio de la base a un bucket privado de Cloud Storage en aproximadamente un segundo, como en Avante. Se activa el versionado de objetos del bucket. La retención está pendiente (Avante usa 3 días).
 - **Respaldos de largo plazo** (decidido el 2026-10-28): copias de la base en la carpeta `respaldos\dashboard_ptar\` del OneDrive de Ecopetrol del administrador, como en Avante. Se hacen solas antes de cada despliegue y a voluntad, con `Descargar respaldos.cmd` de la carpeta `respaldos\`. No hay copias programadas. Se conservan solo los 3 respaldos más recientes de la base (decidido el 2026-11-11): cada respaldo que sale bien borra los anteriores; las exportaciones semanales se conservan todas. Cada respaldo también descarga a `respaldos\dashboard_ptar\exportaciones\` los archivos semanales que falten.
-- **Página Exportaciones:** solo la ve el administrador y solo tiene el archivo semanal (decidido el 2026-11-09). Hasta esa fecha también tenía «Exportar ahora» (un rango de fechas y fuentes, al momento), y la veían los ingenieros; se quitó. Para un rango, está el Excel del Explorador.
+- **Página Exportaciones** (decidido el 2026-11-11): la ven el administrador y los ingenieros.
+  - **Exportar por laboratorio y fechas**, para los dos: un rango de fechas (Desde y Hasta, un solo día si son iguales), los laboratorios o fuentes (Labviewer, BIOTA, Ecolab, PI…; ninguno marcado, todos) y la forma (larga o ancha), al momento. Hasta 100.000 mediciones por archivo, porque Firebase corta las peticiones de más de 60 segundos; para más, hay que acortar las fechas o elegir menos laboratorios. Sin los dudosos en la forma ancha, como el archivo semanal.
+  - **Archivo semanal**, solo para el administrador: la página muestra solo el del domingo anterior, no la lista de las semanas pasadas. Mientras ese se prepara, o si falló, muestra también el último que quedó listo, para no quedarse sin descarga.
+  - Del 2026-11-09 al 2026-11-11 la página fue solo del administrador y solo tenía el archivo semanal: «Exportar ahora» (lo mismo que hoy es la exportación por laboratorio y fechas) se había quitado.
 - **Exportación automática semanal** (decidido el 2026-10-20): **cada lunes** aparece en Exportaciones un archivo con **todos los datos hasta el domingo**, en dos formas. Se guarda en la carpeta `exports/` del bucket.
   - larga, una hoja por año: una fila por medición, con fecha, hora, punto, parámetro, fuente, calificador, valor, si es dudoso y quién la registró;
   - ancha, por fuente: parecida a las hojas de hoy, para quien quiera seguir trabajando en Excel: una hoja por fuente, una fila por fecha y hora, una columna por punto y parámetro. Sin los dudosos.
   - La app lo prepara sola en segundo plano en cuanto recibe la primera visita después del lunes a las 00:00 (con los tableristas capturando, en minutos). Tarda unos minutos.
-  - Se conservan todos; la página muestra los más recientes.
+  - Se conservan todos (en el bucket y en el OneDrive); la página muestra solo el del domingo anterior.
 - **SharePoint:** una persona descarga el archivo semanal y lo sube a mano (decidido el 2026-10-20). Automatizar la entrega (Power Automate o Microsoft Graph) queda para después; depende de permisos de TI.
 - El procedimiento de restauración se documenta en `docs/DESPLIEGUE.md` y se prueba.
 
@@ -378,7 +381,7 @@ El mismo de Avante, para mantener una sola forma de trabajar:
 
 - **Capturar debe ser más rápido que en Excel:** teclado (Tab y Enter), encabezados fijos y celdas que muestran al momento si quedaron guardadas o por qué no.
 - Interfaz en español. Los números se muestran con coma decimal; al capturar se acepta coma o punto.
-- Menú: **Variables importantes**, **Explorador**, **ICAV**, **Exportaciones** (solo para el administrador), **Captura** (solo para quien tenga ámbitos) y **Administración** (solo para el administrador). El capturista solo ve **Captura**.
+- Menú: **Variables importantes**, **Explorador**, **ICAV**, **Exportaciones** (administrador e ingenieros), **Captura** (solo para quien tenga ámbitos) y **Administración** (solo para el administrador). El capturista solo ve **Captura**.
 - Las vistas de lectura deben poder usarse desde el celular.
 
 ## 14. Fases de desarrollo
@@ -468,7 +471,9 @@ Cada fase se entrega funcionando y con pruebas. Prioridad de las pruebas:
 - **Ecodiesel también es de BIOTA.** Sus variables pasan a BIOTA, con sus mediciones, y van en una tercera sección del formato «BIOTA», «Ecodiesel», debajo de DIAPAC. El formato «Ecodiesel» desaparece; quien lo tenía asignado recibe «BIOTA» (migración `catalog/0008`).
 - **Cámaras de DIAPAC:** las cinco variables de cada cámara (SSED, SST, recuento, DQO y G&A) van juntas bajo su cámara, sin separar las del domingo de las del martes.
 
-### Decidido el 2026-11-11 (la rejilla por hora, §6)
+### Decidido el 2026-11-11 (exportaciones y la rejilla por hora, §4, §6 y §10)
+- **Exportar por laboratorio y fechas** vuelve a Exportaciones, para el administrador y los ingenieros (§10). La página la ven los dos; el archivo semanal sigue siendo solo del administrador.
+- **Archivo semanal:** la página muestra solo el del domingo anterior, no la lista de semanas (§10).
 - **Rejilla por hora:** tono alterno por punto, cruz de foco, línea cada 6 horas, la hora actual marcada y los botones «Ir a» (§6).
 
 1. ~~**Tableristas**~~: decidido el 2026-10-20.

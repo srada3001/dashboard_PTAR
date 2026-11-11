@@ -35,7 +35,7 @@
           <a href="{{ important_url }}"{% if request.path == important_url %} aria-current="page"{% endif %}>Variables importantes</a>
           <a href="{{ explorer_url }}"{% if request.path == explorer_url %} aria-current="page"{% endif %}>Explorador</a>
           <a href="{{ weekly_url }}"{% if request.path == weekly_url %} aria-current="page"{% endif %}>ICAV</a>
-          {% if user.is_admin %}<a href="{{ exports_url }}"{% if request.path == exports_url %} aria-current="page"{% endif %}>Exportaciones</a>{% endif %}
+          <a href="{{ exports_url }}"{% if request.path == exports_url %} aria-current="page"{% endif %}>Exportaciones</a>
         {% endif %}
         {% if user.can_capture %}
           <a href="{{ capture_url }}"{% if request.path|slice:":9" == capture_url %} aria-current="page"{% endif %}>Captura</a>

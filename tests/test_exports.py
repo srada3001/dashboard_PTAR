@@ -1,4 +1,5 @@
-"""Exports (docs/REQUISITOS.md §10): long and wide workbooks, the weekly file and its downloads."""
+"""Exports (docs/REQUISITOS.md §10): long and wide workbooks, the export by laboratory and dates,
+the weekly file and its downloads."""
 
 import datetime
 import io
@@ -127,21 +128,64 @@ class TestWeekly:
 
 
 class TestPages:
-    def test_the_administrator_only(self, admin_client, engineer_client, capturer_client):
-        assert admin_client.get(reverse("exports")).status_code == 200
-        for client in (engineer_client, capturer_client):
-            for name in ("exports", "exports_weekly"):
-                assert client.get(reverse(name)).status_code == 403
-            assert client.get(reverse("exports_weekly_download", args=[1])).status_code == 403
-        # Engineers do not see the tab, but keep the rest of the reading menu.
-        menu = engineer_client.get(reverse("important_variables")).content.decode()
-        assert ">Exportaciones</a>" not in menu and ">Explorador</a>" in menu
-        assert ">Exportaciones</a>" in admin_client.get(reverse("important_variables")).content.decode()
+    def test_administrators_and_engineers(self, admin_client, engineer_client, capturer_client):
+        """The page is for both (decided on 2026-11-11); the weekly file, for the administrator only."""
+        for client in (admin_client, engineer_client):
+            assert client.get(reverse("exports")).status_code == 200
+            assert ">Exportaciones</a>" in client.get(reverse("important_variables")).content.decode()
+        for name in ("exports", "exports_download", "exports_weekly"):
+            assert capturer_client.get(reverse(name)).status_code == 403
+        for name, args in (("exports_weekly", []), ("exports_weekly_download", [1])):
+            assert engineer_client.get(reverse(name, args=args)).status_code == 403
+        page = engineer_client.get(reverse("exports")).content.decode()
+        assert "Por laboratorio y fechas" in page and "Archivo semanal" not in page
+        assert "Archivo semanal" in admin_client.get(reverse("exports")).content.decode()
 
-    def test_only_the_weekly_file(self, admin_client):
+    def test_download_by_laboratory_and_dates(self, data, engineer_client, biota):
+        params = {"start": "2026-10-17", "end": "2026-10-18", "shape": "long", "sources": [biota.pk]}
+        response = engineer_client.get(reverse("exports_download"), params)
+        assert response.status_code == 200
+        assert response["Content-Disposition"] == 'attachment; filename="datos_PTAR_BIOTA_largo_2026-10-17_2026-10-18.xlsx"'
+        book = load_workbook(io.BytesIO(b"".join(response.streaming_content)), read_only=True)
+        assert [r[6] for r in rows(book, "Mediciones 2026")[1:]] == [0.2, 0.3]
+        assert "Del 2026-10-17 al 2026-10-18, BIOTA." in [r[0] for r in rows(book, "Léeme")]
+
+    def test_one_day_of_every_laboratory_wide(self, data, admin_client):
+        response = admin_client.get(reverse("exports_download"), {"start": "2026-10-18", "end": "2026-10-18", "shape": "wide"})
+        assert response["Content-Disposition"] == 'attachment; filename="datos_PTAR_todos_ancho_2026-10-18.xlsx"'
+        book = load_workbook(io.BytesIO(b"".join(response.streaming_content)), read_only=True)
+        assert book.sheetnames == ["Léeme", "BIOTA", "Ecolab"]
+        # Without the suspect value (99) in the wide shape.
+        assert [r[1:] for r in rows(book, "Ecolab")[1:]] == [("16:00", 0.25)]
+
+    def test_dates_in_order(self, engineer_client):
+        response = engineer_client.get(reverse("exports_download"), {"start": "2026-10-19", "end": "2026-10-18", "shape": "long"})
+        assert response.status_code == 400
+        assert "Debe ser anterior o igual a la fecha final." in response.content.decode()
+
+    def test_too_much_at_once(self, data, engineer_client, admin_client, monkeypatch):
+        from apps.exports import views as export_views
+
+        monkeypatch.setattr(export_views, "MAX_AT_ONCE", 2)
+        params = {"start": "2025-01-01", "end": "2026-10-19", "shape": "wide"}
+        page = engineer_client.get(reverse("exports_download"), params)
+        assert page.status_code == 400
+        text = page.content.decode()
+        assert "Son 6 mediciones; al momento se descargan hasta 2. Acorta las fechas o elige menos laboratorios." in text
+        assert "El archivo semanal tiene todos los datos." not in text
+        assert "El archivo semanal tiene todos los datos." in admin_client.get(reverse("exports_download"), params).content.decode()
+
+    def test_only_the_weekly_file_of_the_sunday_before(self, admin_client):
+        """Not the list of past weeks (decided on 2026-11-11)."""
+        now = timezone.now()
+        for week in (MONDAY - datetime.timedelta(days=14), MONDAY - datetime.timedelta(days=7)):
+            WeeklyExport.objects.create(week=week, status=WeeklyExport.Status.DONE, started_at=now, finished_at=now, file_name=weekly.file_name(week))
         page = admin_client.get(reverse("exports")).content.decode()
-        assert "Archivo semanal" in page and "Exportar ahora" not in page
-        assert admin_client.get("/exportaciones/descargar/").status_code == 404
+        assert "Domingo 2026-10-11" in page and "Domingo 2026-10-04" not in page
+        # While this week's is being prepared, the last ready one stays downloadable.
+        WeeklyExport.objects.create(week=MONDAY, status=WeeklyExport.Status.RUNNING, started_at=now)
+        page = admin_client.get(reverse("exports")).content.decode()
+        assert "Domingo 2026-10-18" in page and "Domingo 2026-10-11" in page and "Domingo 2026-10-04" not in page
 
     def test_weekly_files_are_listed_and_downloaded(self, data, exports_dir, admin_client):
         export = weekly.ensure_current(at(MONDAY, 0), background=False)
