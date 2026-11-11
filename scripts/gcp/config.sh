@@ -28,6 +28,24 @@ if [ -z "${BACKUP_DIR:-}" ] && command -v cygpath >/dev/null 2>&1; then
     BACKUP_DIR="$(cygpath -u "${OneDriveCommercial:-$HOME/OneDrive - Ecopetrol S.A}")/respaldos/dashboard_ptar"
 fi
 
+# Keeps only the newest KEEP_BACKUPS backups in BACKUP_DIR (each is a folder PREFIX-YYYY-MM-DD_HHMM
+# and its .log; the names sort by date). Older folders and logs, and logs whose folder is gone,
+# are deleted. Other folders (like exportaciones/) are not touched. backup.sh calls it after a
+# backup succeeds, never after one fails.
+KEEP_BACKUPS="${KEEP_BACKUPS:-3}"
+prune_backups() {
+    local prefix="$1" path name kept
+    kept=" $(find "$BACKUP_DIR" -mindepth 1 -maxdepth 1 -type d -name "$prefix-*" -printf '%f\n' \
+        | sort | tail -n "$KEEP_BACKUPS" | tr '\n' ' ')"
+    for path in "$BACKUP_DIR/$prefix"-*; do
+        [ -e "$path" ] || continue
+        name="$(basename "$path")"
+        case "$kept" in *" ${name%.log} "*) continue ;; esac
+        echo "  Borrando $name"
+        rm -rf -- "$path"
+    done
+}
+
 require_project() {
     if [ -z "$PROJECT_ID" ]; then
         echo "No hay proyecto de Google Cloud activo. Ejecuta: gcloud config set project ID_DEL_PROYECTO" >&2

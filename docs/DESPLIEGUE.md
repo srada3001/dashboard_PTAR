@@ -156,7 +156,7 @@ respaldos\
 bash scripts/gcp/backup.sh
 ```
 
-No hay copias programadas. Se conservan todas; con el histórico, cada base ocupa unos 260 MB.
+No hay copias programadas. Se conservan solo los **3 respaldos más recientes** de la base: después de cada respaldo que sale bien, `backup.sh` borra los anteriores (carpeta y `.log`); `exportaciones\` no se toca. Con el histórico, cada base ocupa unos 260 MB. Para conservar más en una ocasión: `KEEP_BACKUPS=5 bash scripts/gcp/backup.sh`. Lo borrado queda en la papelera de reciclaje de OneDrive (en la web) por un tiempo.
 
 **Las exportaciones semanales:** cada respaldo descarga de `gs://<bucket>/exports/` a `exportaciones\` los archivos que todavía no estén ahí. Como cada uno trae todos los datos hasta su domingo, se guardan una sola vez y no dentro de cada respaldo.
 

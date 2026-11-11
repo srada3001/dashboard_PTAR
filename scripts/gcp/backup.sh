@@ -5,6 +5,7 @@
 #   dashboard_ptar-YYYY-MM-DD_HHMM.log                      what was copied
 #   exportaciones/                                          every weekly export (only new ones are downloaded)
 # Litestream keeps only 3 days of history in the bucket; these copies are the long-term ones.
+# Only the newest 3 backups are kept (KEEP_BACKUPS in config.sh); older ones are deleted.
 # deploy.sh runs it before every deploy. Needs gcloud signed in and Docker Desktop running
 # (Litestream rebuilds the database in a container).
 # Run from Git Bash: bash scripts/gcp/backup.sh
@@ -93,3 +94,5 @@ if gcloud storage ls "gs://$BUCKET/exports/" >/dev/null 2>&1; then
 fi
 
 echo "Listo: $DEST ($(du -sh "$DEST" | cut -f1))"
+echo "Se conservan los $KEEP_BACKUPS respaldos más recientes; se borran los anteriores:"
+prune_backups dashboard_ptar
