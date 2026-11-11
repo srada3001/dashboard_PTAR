@@ -27,6 +27,12 @@
     <p class="ayuda">El administrador las agrega en Administración → Formatos de captura.</p>
   </section>
 {% else %}
+{% if grid.slots_as_rows and grid.point_groups|length > 1 %}
+<nav class="saltos" aria-label="Ir a un punto">
+  <span>Ir a</span>
+  {% for point, span, css in grid.point_groups %}<button type="button" class="boton boton--secundario" data-jump="{{ forloop.counter0 }}">{{ point }}</button>{% endfor %}
+</nav>
+{% endif %}
 <div class="rejilla-caja">
   <table class="rejilla{% if grid.slots_as_rows %} rejilla--horas{% endif %}"
          data-save-url="{% url 'capture_save_cell' form.pk %}"
@@ -37,17 +43,17 @@
       <thead>
         <tr>
           <th class="rejilla__esquina" rowspan="2" scope="col">Hora</th>
-          {% for point, span in grid.point_groups %}<th class="rejilla__punto" colspan="{{ span }}" scope="colgroup">{{ point }}</th>{% endfor %}
+          {% for point, span, css in grid.point_groups %}<th class="rejilla__punto {{ css }}" colspan="{{ span }}" scope="colgroup"><span class="rejilla__punto-nombre">{{ point }}</span></th>{% endfor %}
         </tr>
         <tr>
-          {% for variable in grid.variables %}<th class="rejilla__parametro" scope="col">{{ variable.parameter.code }}{% if variable.parameter.unit %}<span>{{ variable.parameter.unit }}</span>{% endif %}</th>{% endfor %}
+          {% for variable, css in grid.variables_with_columns %}<th class="rejilla__parametro {{ css }}" scope="col">{{ variable.parameter.code }}{% if variable.parameter.unit %}<span>{{ variable.parameter.unit }}</span>{% endif %}</th>{% endfor %}
         </tr>
       </thead>
       <tbody>
-        {% for slot, cells in grid.slot_rows %}
-          <tr>
+        {% for slot, cells, row_css in grid.slot_rows %}
+          <tr{% if row_css %} class="{{ row_css }}"{% endif %}>
             <th class="rejilla__franja" scope="row">{{ slot.label }}</th>
-            {% for cell in cells %}{% include "capture/_cell.html" %}{% endfor %}
+            {% for cell, css in cells %}{% include "capture/_cell.html" with column=css %}{% endfor %}
           </tr>
         {% endfor %}
       </tbody>

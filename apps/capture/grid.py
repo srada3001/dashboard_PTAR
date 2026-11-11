@@ -162,18 +162,42 @@ class Grid:
         return self.cells.get((variable.pk, slot.key)) or Cell(variable, slot, applies=False)
 
     def point_groups(self):
-        """[(point, number of consecutive variables at it)], for the header of the hours layout."""
+        """[(point, number of consecutive variables at it, its CSS classes)], for the header of the
+        hours layout. Every other point is shaded, and each one after the first starts with a
+        thicker border, so the eye finds the point's columns."""
         groups = []
         for variable in self.variables:
             if groups and groups[-1][0] == variable.point:
                 groups[-1][1] += 1
             else:
                 groups.append([variable.point, 1])
-        return groups
+        return [(point, span, column_classes(index, True)) for index, (point, span) in enumerate(groups)]
+
+    def column_classes(self):
+        """The CSS classes of each variable's column in the hours layout (see point_groups)."""
+        classes, group = [], -1
+        for index, variable in enumerate(self.variables):
+            starts = not index or self.variables[index - 1].point != variable.point
+            group += starts
+            classes.append(column_classes(group, starts))
+        return classes
+
+    def variables_with_columns(self):
+        """[(variable, its column's CSS classes)], for the parameters' header of the hours layout."""
+        return list(zip(self.variables, self.column_classes()))
 
     def slot_rows(self):
-        """[(slot, [cell per variable])]: the hours as rows."""
-        return [(slot, [self.cell(variable, slot) for variable in self.variables]) for slot in self.slots]
+        """[(slot, [(cell, its column's CSS classes) per variable], the row's CSS classes)]: the
+        hours as rows, with a stronger line every 6 hours."""
+        columns = self.column_classes()
+        return [
+            (
+                slot,
+                [(self.cell(variable, slot), css) for variable, css in zip(self.variables, columns)],
+                "rejilla__cada-6" if slot.hour and slot.hour % 6 == 0 else "",
+            )
+            for slot in self.slots
+        ]
 
     def section(self, variable):
         return self.sections.get(variable.pk, "")
@@ -195,6 +219,16 @@ class Grid:
                 title = self.section(variable)
             rows.append((variable, span, [self.cell(variable, slot) for slot in self.slots], title))
         return rows
+
+
+def column_classes(group, starts):
+    """The shade of the point's columns (every other point) and the border where a point starts."""
+    classes = []
+    if group % 2:
+        classes.append("rejilla__banda")
+    if starts and group:
+        classes.append("rejilla__inicio-col")
+    return " ".join(classes)
 
 
 def grouped(items):

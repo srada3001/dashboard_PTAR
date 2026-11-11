@@ -175,6 +175,7 @@ Nombres de ejemplo en inglés para el código; la interfaz va en español.
 - Si el laboratorio reporta "ND" en el sentido de "no detectado" y da el límite de detección, se escribe "<" con ese límite (por ejemplo, "<0,1"). Si no da el límite, la celda se deja vacía.
 - Se llena con el teclado como en Excel: Tab y Enter para avanzar (Enter baja, Mayúsculas + Enter sube y Escape deshace lo escrito en la celda).
 - La celda con el foco muestra abajo la variable, sus rangos, quién la registró y cuándo, y su historial.
+- Para no perderse en la rejilla por hora (decidido el 2026-11-11): los puntos se alternan con un tono suave y un borde más grueso entre uno y otro; el nombre del punto, el encabezado y la columna de la hora quedan a la vista al desplazarse; la celda con el foco resalta su hora, su parámetro y su punto, con un tono en toda la fila; hay una línea más marcada cada 6 horas (06:00, 12:00 y 18:00); hoy, la hora actual se marca; y los botones «Ir a» saltan a cada punto en la fila de la celda con el foco.
 
 **Validación en cada celda** (en el navegador para avisar al momento y en el servidor, que es el que decide):
 - Solo números, opcionalmente con "<" o ">" delante. Valen la coma y el punto decimal ("7,4", "7.4", "<0,1", "> 500"); "7,,4", "7/4", "19+", "ND" o "asdfdf" no.
@@ -466,6 +467,9 @@ Cada fase se entrega funcionando y con pruebas. Prioridad de las pruebas:
 - **Un solo flujo en el histórico:** donde un clarificador tiene los dos (el diario de «Datos LABORATORIO» y el de PI por hora), se queda solo el más completo, el de PI por hora. El otro se borra del todo, con su historial, porque son datos repetidos y la plataforma todavía se construye (migración `catalog/0010`); sus columnas («ClarifiC Flujo» y «ClarifiD Flujo») ya no se importan. Hoy pasa en BA-4005C y BA-4005D. En BA-4005A, BA-4005B y la recirculación solo hay el diario, con la fuente «Por confirmar».
 - **Ecodiesel también es de BIOTA.** Sus variables pasan a BIOTA, con sus mediciones, y van en una tercera sección del formato «BIOTA», «Ecodiesel», debajo de DIAPAC. El formato «Ecodiesel» desaparece; quien lo tenía asignado recibe «BIOTA» (migración `catalog/0008`).
 - **Cámaras de DIAPAC:** las cinco variables de cada cámara (SSED, SST, recuento, DQO y G&A) van juntas bajo su cámara, sin separar las del domingo de las del martes.
+
+### Decidido el 2026-11-11 (la rejilla por hora, §6)
+- **Rejilla por hora:** tono alterno por punto, cruz de foco, línea cada 6 horas, la hora actual marcada y los botones «Ir a» (§6).
 
 1. ~~**Tableristas**~~: decidido el 2026-10-20.
 2. ~~**Capturista**~~: decidido el 2026-10-20.

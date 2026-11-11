@@ -153,6 +153,23 @@ class TestCells:
         assert form.sections() == ["DIAPAC", "Fase I"]
         assert "DIAPAC · Fase I" in make_client(admin_user).get(reverse("capture_index")).content.decode()
 
+    def test_hours_layout_shades_every_other_point(self, ecolab_grid_form, admin_user, ph_ecolab, outlet, ph, ecolab):
+        """Every other point is shaded and each one after the first starts with a thicker border; a
+        stronger line every 6 hours (decided on 2026-11-11)."""
+        ph_outlet = Variable.objects.create(point=outlet, parameter=ph, source=ecolab, time_resolution=Schedule.HOURLY)
+        CaptureFormVariable.objects.create(form=ecolab_grid_form, variable=ph_outlet, order=3)
+        grid = build(ecolab_grid_form, YESTERDAY, admin_user)
+        assert [(point.code, span, css) for point, span, css in grid.point_groups()] == [
+            ("BA-4001", 2, ""), ("BA-4010", 1, "rejilla__banda rejilla__inicio-col"),
+        ]
+        assert grid.column_classes() == ["", "", "rejilla__banda rejilla__inicio-col"]
+        rows = grid.slot_rows()
+        assert [slot.label for slot, _, css in rows if css] == ["06:00", "12:00", "18:00"]
+        assert [css for _, css in rows[0][1]] == grid.column_classes()
+        page = make_client(admin_user).get(reverse("capture_grid", args=[ecolab_grid_form.pk]), {"date": str(YESTERDAY)}).content.decode()
+        assert page.count('data-jump="') == 2
+        assert page.count('class="celda rejilla__banda rejilla__inicio-col') == 24
+
     def test_future_hours_cannot_be_filled(self, ecolab_grid_form, admin_user, ph_ecolab):
         now = at(timezone.localdate(), 10)
         grid = build(ecolab_grid_form, timezone.localdate(), admin_user, now=now)

@@ -457,6 +457,23 @@ p.sin-datos { margin: 8px 0 12px; }
 }
 .rejilla__seccion + .rejilla__inicio-punto > * { border-top: 0; }
 
+/* Finding a cell in the hours layout: every other point shaded, with a thicker border where a
+   point starts; a stronger line every 6 hours; the current hour marked; and, for the focused cell,
+   its hour, parameter and point highlighted, with a tint across its row. */
+.rejilla { --banda: #eef3f7; --banda-encabezado: #e4ebf1; --linea: #a9b5c1; --fila-foco: rgba(123, 164, 40, .1); }
+.rejilla--horas .rejilla__esquina { position: sticky; left: 0; z-index: 3; vertical-align: bottom; }
+.rejilla th.rejilla__banda { background: var(--banda-encabezado); }
+.rejilla .rejilla__inicio-col { border-left: 2px solid var(--linea); }
+.rejilla__punto-nombre { position: sticky; left: calc(var(--franja, 64px) + 8px); display: inline-block; }
+.rejilla__cada-6 > * { border-top: 1px solid var(--linea); }
+.rejilla__ahora > .rejilla__franja { box-shadow: inset 4px 0 0 var(--accent); color: var(--accent-ink); }
+.rejilla__fila-foco > td:not(.celda--no-aplica) { background-image: linear-gradient(var(--fila-foco), var(--fila-foco)); }
+.rejilla th.en-foco, .rejilla th.en-foco span { background: var(--accent-soft); color: var(--accent-ink) !important; }
+.rejilla th.en-foco span { background: none; }
+
+.saltos { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 13px; color: var(--text-soft); }
+.saltos .boton { padding: 4px 10px; font-size: 13px; }
+
 .celda { padding: 0; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); }
 .celda__valor {
   display: block;
@@ -471,11 +488,12 @@ p.sin-datos { margin: 8px 0 12px; }
   text-align: right;
 }
 .celda__valor:focus { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--surface); }
+.celda.rejilla__banda { background-color: var(--banda); }
 .celda--no-aplica { background: repeating-linear-gradient(135deg, var(--surface-2), var(--surface-2) 4px, var(--surface) 4px, var(--surface) 8px); }
 .celda--bloqueada .celda__valor { color: var(--text-soft); background: var(--surface-2); cursor: default; }
 .celda--dudosa .celda__valor { color: var(--error); font-weight: 600; background: var(--error-soft); }
 .celda--guardando .celda__valor { color: var(--text-faint); }
-.celda--guardada { background: var(--accent-soft); transition: background .6s; }
+.celda.celda--guardada { background: var(--accent-soft); transition: background .6s; }
 .celda--error { box-shadow: inset 0 0 0 2px var(--error); }
 .celda--error .celda__valor { background: var(--error-soft); }
 .celda--aviso { box-shadow: inset 0 0 0 2px var(--gold); }

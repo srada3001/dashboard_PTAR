@@ -5,7 +5,10 @@
    - a quick check while typing (a number, optionally with "<" or ">"), so a typo shows at once;
    - the questions the server asks before saving (outside the usual range, correcting or deleting
      a value), with an optional reason, one at a time;
-   - the bar below, with the focused cell's variable, ranges, who registered it, and its history. */
+   - the bar below, with the focused cell's variable, ranges, who registered it, and its history;
+   - finding the cell: the focused cell's hour, parameter and point highlighted, a tint across its
+     row, the cell kept clear of the sticky header and column, the current hour marked, and the
+     «Ir a» buttons, which jump to a point in the focused row. */
 
 (function () {
   "use strict";
@@ -221,6 +224,84 @@
     focused = event.target;
     event.target.select();
     describe(event.target);
+    mark(event.target);
+    requestAnimationFrame(() => reveal(cellOf(event.target)));
+  });
+
+  // ---------------------------------------------------------------- finding the cell
+
+  const box = table.parentElement;
+  const hours = table.classList.contains("rejilla--horas");
+  const headers = table.tHead.rows;
+  const pointHeaders = hours ? [...headers[0].querySelectorAll(".rejilla__punto")] : [];
+  const stickyColumn = () => table.querySelector(".rejilla__franja, .rejilla__parametro-fila");
+  if (hours) table.style.setProperty("--franja", `${headers[0].cells[0].offsetWidth}px`);
+
+  /** The point's header over the column `index` (0 = the first variable) of the hours layout. */
+  function pointHeader(index) {
+    let end = 0;
+    return pointHeaders.find((header) => (end += header.colSpan) > index);
+  }
+
+  function mark(input) {
+    table.querySelectorAll(".en-foco").forEach((node) => node.classList.remove("en-foco"));
+    table.querySelectorAll(".rejilla__fila-foco").forEach((node) => node.classList.remove("rejilla__fila-foco"));
+    const cell = cellOf(input);
+    const row = cell.parentElement;
+    const fromRight = [...row.children].indexOf(cell) - row.children.length;
+    const columns = headers[headers.length - 1].children;
+    const marked = [row.querySelector(".rejilla__franja, .rejilla__parametro-fila"), columns[columns.length + fromRight]];
+    if (hours) {
+      marked.push(pointHeader(row.children.length + fromRight - 1));
+    } else {
+      let first = row; // the point's name spans its rows: it is in the point's first row
+      while (first && !first.querySelector(".rejilla__punto-fila")) first = first.previousElementSibling;
+      if (first) marked.push(first.querySelector(".rejilla__punto-fila"));
+    }
+    row.classList.add("rejilla__fila-foco");
+    marked.forEach((node) => node && node.classList.add("en-foco"));
+  }
+
+  /** Scrolls the grid so the cell is not under the sticky header or column, nor at the edge. */
+  function reveal(cell) {
+    const frame = box.getBoundingClientRect();
+    const rect = cell.getBoundingClientRect();
+    const top = frame.top + box.clientTop + table.tHead.offsetHeight;
+    const bottom = frame.top + box.clientTop + box.clientHeight;
+    const sticky = stickyColumn();
+    const left = frame.left + box.clientLeft + (sticky ? sticky.offsetWidth : 0);
+    const right = frame.left + box.clientLeft + box.clientWidth;
+    const margin = 8;
+    if (rect.top < top) box.scrollTop -= top - rect.top + margin;
+    else if (rect.bottom > bottom) box.scrollTop += rect.bottom - bottom + margin;
+    if (rect.left < left) box.scrollLeft -= left - rect.left + margin;
+    else if (rect.right > right) box.scrollLeft += rect.right - right + margin;
+  }
+
+  // Today, the current hour: the last row with an hour that is not in the future.
+  const bodyRows = [...table.tBodies[0].rows];
+  const current = hours && "today" in table.dataset
+    ? bodyRows.filter((row) => row.querySelector("input.celda__valor:not([data-future])")).at(-1)
+    : null;
+  if (current) current.classList.add("rejilla__ahora");
+
+  document.querySelectorAll("[data-jump]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const header = pointHeaders[Number(button.dataset.jump)];
+      let start = 0;
+      for (const other of pointHeaders) {
+        if (other === header) break;
+        start += other.colSpan;
+      }
+      const row = (focused && focused.closest("tr")) || current || bodyRows[0];
+      const cells = [...row.children].slice(1 + start, 1 + start + header.colSpan);
+      const inputs = cells.map((cell) => cell.querySelector("input.celda__valor")).filter(Boolean);
+      const target = inputs.find((input) => !input.readOnly && !input.value) || inputs.find((input) => !input.readOnly) || inputs[0];
+      if (!target) return;
+      const sticky = stickyColumn();
+      box.scrollLeft = header.offsetLeft - (sticky ? sticky.offsetWidth : 0);
+      target.focus({ preventScroll: true });
+    });
   });
 
   status.history.addEventListener("click", async () => {
